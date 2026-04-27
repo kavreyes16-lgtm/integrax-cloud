@@ -129,8 +129,8 @@ export default function Dashboard() {
     const { data } = await supabase
       .from("productos")
       .select("*")
-.or("activo.eq.true,activo.is.null")
       .eq("empresa_ruc", rucEmpresa)
+      .or("activo.eq.true,activo.is.null")
       .order("created_at", { ascending: false });
 
     setProductos(data || []);
@@ -355,6 +355,7 @@ export default function Dashboard() {
       precio: Number(precioProducto),
       stock: Number(stockProducto || 0),
       stock_minimo: Number(stockMinimoProducto || 5),
+      activo: true,
     };
 
     if (productoEditandoId) {
@@ -400,29 +401,33 @@ export default function Dashboard() {
   };
 
   const eliminarProductoInventario = async (id?: string) => {
-  if (!id || !empresaActiva) return;
+    if (!id || !empresaActiva) return;
 
-  const confirmar = confirm(
-    "¿Seguro que deseas eliminar este producto? Si ya fue usado en facturas, solo se ocultará."
-  );
+    const confirmar = confirm(
+      "¿Seguro que deseas eliminar este producto del inventario? Si ya fue usado en facturas, se ocultará para no dañar el historial."
+    );
 
-  if (!confirmar) return;
+    if (!confirmar) return;
 
-  const { error } = await supabase
-    .from("productos")
-    .update({ activo: false }) // 🔥 ya no se elimina, se oculta
-    .eq("id", id);
+    const { error } = await supabase
+      .from("productos")
+      .update({ activo: false })
+      .eq("id", id);
 
-  if (error) {
-    console.error(error);
-    alert("Error eliminando producto");
-    return;
-  }
+    if (error) {
+      console.error(error);
+      alert("No se pudo eliminar el producto. Ejecuta el SQL de inventario y vuelve a intentar.");
+      return;
+    }
 
-  await cargarProductos(empresaActiva.ruc);
+    await cargarProductos(empresaActiva.ruc);
 
-  alert("Producto eliminado del inventario");
-};
+    if (productoEditandoId === id) {
+      limpiarFormularioProducto();
+    }
+
+    alert("Producto eliminado del inventario correctamente");
+  };
 
   const agregarProductoAFactura = () => {
     if (!productoSeleccionado) return;
@@ -2257,7 +2262,7 @@ export default function Dashboard() {
     : "bg-white border border-gray-100 text-gray-900";
 
   const inputClass =
-    "w-full p-3 rounded-xl bg-white text-gray-900 placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500";
+    "w-full min-w-0 p-3 rounded-xl bg-white text-gray-900 placeholder-gray-500 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
   const ventasChartData = facturasValidas
     .slice(0, 7)
@@ -2478,7 +2483,7 @@ export default function Dashboard() {
           {seccion === "dashboard" && (
             <section>
               <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold">Dashboard empresarial</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold">Dashboard empresarial</h1>
                 <p className="opacity-70">
                   Panel ejecutivo con ventas, contabilidad, inventario, clientes y alertas del sistema.
                 </p>
@@ -2535,7 +2540,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-8 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Ventas válidas</p>
                   <h2 className="text-3xl font-bold mt-2">
                     NIO {totalVendido.toFixed(2)}
@@ -2543,7 +2548,7 @@ export default function Dashboard() {
                   <p className="mt-2 text-sm opacity-70">{facturasValidas.length} facturas válidas</p>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Utilidad estimada</p>
                   <h2 className={`text-3xl font-bold mt-2 ${utilidadEstimada < 0 ? "text-red-500" : "text-green-500"}`}>
                     NIO {utilidadEstimada.toFixed(2)}
@@ -2551,13 +2556,13 @@ export default function Dashboard() {
                   <p className="mt-2 text-sm opacity-70">Ventas + ingresos - egresos - planilla</p>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Clientes</p>
                   <h2 className="text-3xl font-bold mt-2">{clientes.length}</h2>
                   <p className="mt-2 text-sm opacity-70">Registrados</p>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Stock bajo</p>
                   <h2 className={`text-3xl font-bold mt-2 ${productosStockBajo.length > 0 ? "text-red-500" : "text-green-500"}`}>
                     {productosStockBajo.length}
@@ -2570,7 +2575,7 @@ export default function Dashboard() {
                 <div className={`p-6 rounded-2xl shadow-lg lg:col-span-2 ${tarjeta}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-xl font-bold">Ventas recientes</h2>
+                      <h2 className="text-lg sm:text-xl font-bold">Ventas recientes</h2>
                       <p className="text-sm opacity-70">Gráfica de facturas válidas recientes</p>
                     </div>
                     <span className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white">
@@ -2605,8 +2610,8 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
-                  <h2 className="text-xl font-bold">Estado de facturas</h2>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                  <h2 className="text-lg sm:text-xl font-bold">Estado de facturas</h2>
                   <p className="text-sm opacity-70">Válidas, erróneas y pendientes</p>
 
                   <div className="mt-6 h-64 sm:h-72">
@@ -2646,7 +2651,7 @@ export default function Dashboard() {
 
               <div className="mt-8 grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
                 <div className={`p-6 rounded-2xl shadow-lg lg:col-span-2 ${tarjeta}`}>
-                  <h2 className="text-xl font-bold">Resumen financiero</h2>
+                  <h2 className="text-lg sm:text-xl font-bold">Resumen financiero</h2>
                   <p className="text-sm opacity-70">Ventas, ingresos, egresos y planilla</p>
 
                   <div className="mt-6 h-64 sm:h-72">
@@ -2670,8 +2675,8 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
-                  <h2 className="text-xl font-bold">Alertas inteligentes</h2>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                  <h2 className="text-lg sm:text-xl font-bold">Alertas inteligentes</h2>
 
                   <div className="mt-5 space-y-3">
                     {productosStockBajo.length > 0 && (
@@ -2712,7 +2717,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-8 grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <h2 className="text-xl font-bold mb-4">Facturas recientes</h2>
 
                   <div className="mt-4 lg:mt-0 space-y-3">
@@ -2734,7 +2739,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <h2 className="text-xl font-bold mb-4">Productos con stock bajo</h2>
 
                   <div className="mt-4 lg:mt-0 space-y-3">
@@ -2758,14 +2763,14 @@ export default function Dashboard() {
 
           {seccion === "clientes" && usuarioActivo.rol === "admin" && (
             <section>
-              <h1 className="text-3xl font-bold">Clientes</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Clientes</h1>
               <p className="mt-2 opacity-70">
                 Registra clientes para facturación profesional e historial de ventas.
               </p>
 
               <form
                 onSubmit={crearCliente}
-                className={`mt-6 grid gap-4 md:grid-cols-2 p-6 rounded-2xl shadow-lg ${tarjeta}`}
+                className={`mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}
               >
                 <input
                   type="text"
@@ -2813,7 +2818,7 @@ export default function Dashboard() {
               </form>
 
               <div className="mt-8 space-y-4">
-                <h2 className="text-2xl font-bold">Clientes registrados</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Clientes registrados</h2>
 
                 {clientes.length === 0 && (
                   <p className="opacity-60">No hay clientes registrados.</p>
@@ -2859,7 +2864,7 @@ export default function Dashboard() {
 
           {seccion === "facturacion" && (
             <section>
-              <h1 className="text-3xl font-bold">Facturación</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Facturación</h1>
 
               <form onSubmit={guardarFactura} className="mt-6 space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -2981,7 +2986,7 @@ export default function Dashboard() {
               </form>
 
               <div className="mt-8 space-y-4">
-                <h2 className="text-2xl font-bold">Facturas guardadas</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Facturas guardadas</h2>
 
                 {facturas.length === 0 && (
                   <p className="opacity-60">No hay facturas guardadas.</p>
@@ -3059,14 +3064,14 @@ export default function Dashboard() {
 
           {seccion === "inventario" && (
             <section>
-              <h1 className="text-3xl font-bold">Inventario</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Inventario</h1>
 
               <form
                 onSubmit={agregarProductoInventario}
                 className={`mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 p-6 rounded-2xl shadow-lg ${tarjeta}`}
               >
                 <div className="md:col-span-2">
-                  <h2 className="text-xl font-bold">
+                  <h2 className="text-lg sm:text-xl font-bold">
                     {productoEditandoId ? "Editar producto" : "Agregar producto"}
                   </h2>
                   <p className="mt-1 text-sm opacity-70">
@@ -3142,7 +3147,7 @@ export default function Dashboard() {
               </form>
 
               <div className="mt-8 space-y-4">
-                <h2 className="text-2xl font-bold">Productos registrados</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Productos registrados</h2>
 
                 {productos.length === 0 && (
                   <p className="opacity-60">No hay productos registrados.</p>
@@ -3203,7 +3208,7 @@ export default function Dashboard() {
 
           {seccion === "reportes" && usuarioActivo.rol === "admin" && (
             <section>
-              <h1 className="text-3xl font-bold">Reportes</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Reportes</h1>
 
               <div className="mt-6 flex flex-col sm:flex-row flex-wrap gap-3">
                 <button
@@ -3240,26 +3245,26 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-6 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Total vendido</p>
                   <h2 className="text-2xl font-bold mt-2">
                     NIO {totalVendido.toFixed(2)}
                   </h2>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Facturas válidas</p>
                   <h2 className="text-2xl font-bold mt-2">{facturasValidas.length}</h2>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Promedio por factura</p>
                   <h2 className="text-2xl font-bold mt-2">
                     NIO {promedioFactura.toFixed(2)}
                   </h2>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Ventas del día</p>
                   <h2 className="text-2xl font-bold mt-2">
                     NIO {ventasHoy.toFixed(2)}
@@ -3286,7 +3291,7 @@ export default function Dashboard() {
 
           {seccion === "usuarios" && usuarioActivo.rol === "admin" && (
             <section>
-              <h1 className="text-3xl font-bold">Usuarios</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Usuarios</h1>
 
               <form onSubmit={crearUsuario} className="mt-6 space-y-4">
                 <input
@@ -3353,13 +3358,13 @@ export default function Dashboard() {
 
           {seccion === "planilla" && usuarioActivo.rol === "admin" && (
             <section>
-              <h1 className="text-3xl font-bold">Planilla</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Planilla</h1>
               <p className="mt-2 opacity-70">
                 Control de empleados, horas extra, bonificaciones, deducciones, INSS y salario neto.
               </p>
 
               <div className="mt-6 grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <h2 className="text-xl font-bold mb-4">Agregar empleado</h2>
 
                   <form onSubmit={agregarEmpleadoPlanilla} className="space-y-4">
@@ -3401,7 +3406,7 @@ export default function Dashboard() {
                   </form>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <h2 className="text-xl font-bold mb-4">Registrar pago</h2>
 
                   <form onSubmit={guardarPagoPlanilla} className="space-y-4">
@@ -3482,7 +3487,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-8 grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <h2 className="text-xl font-bold mb-4">Empleados registrados</h2>
 
                   <div className="space-y-4">
@@ -3513,7 +3518,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <h2 className="text-xl font-bold mb-4">Historial de pagos</h2>
 
                   <div className="space-y-4">
@@ -3567,34 +3572,34 @@ export default function Dashboard() {
 
           {seccion === "contabilidad" && (
             <section>
-              <h1 className="text-3xl font-bold">Contabilidad</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Contabilidad</h1>
               <p className="mt-2 opacity-70">
                 Registra ingresos y egresos para estimar balance, utilidad y control financiero.
               </p>
 
               <div className="mt-6 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Ingresos contables</p>
                   <h2 className="text-2xl font-bold mt-2 text-green-500">
                     NIO {ingresosContables.toFixed(2)}
                   </h2>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Egresos contables</p>
                   <h2 className="text-2xl font-bold mt-2 text-red-500">
                     NIO {egresosContables.toFixed(2)}
                   </h2>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Planilla pagada</p>
                   <h2 className="text-2xl font-bold mt-2">
                     NIO {totalPlanillaPagada.toFixed(2)}
                   </h2>
                 </div>
 
-                <div className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+                <div className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
                   <p className="opacity-70">Utilidad estimada</p>
                   <h2 className={`text-2xl font-bold mt-2 ${utilidadEstimada < 0 ? "text-red-500" : "text-green-500"}`}>
                     NIO {utilidadEstimada.toFixed(2)}
@@ -3604,7 +3609,7 @@ export default function Dashboard() {
 
               <form
                 onSubmit={registrarMovimientoContable}
-                className={`mt-8 grid gap-4 md:grid-cols-2 p-6 rounded-2xl shadow-lg ${tarjeta}`}
+                className={`mt-8 grid gap-4 grid-cols-1 md:grid-cols-2 p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}
               >
                 <select
                   value={tipoMovimiento}
@@ -3689,8 +3694,8 @@ export default function Dashboard() {
           )}
 
           {seccion === "configuracion" && usuarioActivo.rol === "admin" && (
-            <section className={`p-6 rounded-2xl shadow-lg ${tarjeta}`}>
-              <h1 className="text-3xl font-bold">Configuración</h1>
+            <section className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
+              <h1 className="text-2xl sm:text-3xl font-bold">Configuración</h1>
               <p className="mt-2 opacity-70">
                 Personaliza los datos de empresa que aparecerán en la factura profesional.
               </p>

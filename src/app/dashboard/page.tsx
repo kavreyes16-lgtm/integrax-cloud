@@ -2478,7 +2478,7 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className={`w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 ${texto}`}>
         <header
           className={`border-b px-4 sm:px-8 py-4 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between items-start sm:items-center shadow-sm ${
             modoOscuro

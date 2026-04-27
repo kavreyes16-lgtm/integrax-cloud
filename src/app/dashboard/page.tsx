@@ -2414,54 +2414,68 @@ export default function Dashboard() {
 
   return (
     <div className={`flex min-h-screen flex-col lg:flex-row transition-colors duration-300 ${fondo}`}>
-      <aside className="w-full lg:w-64 bg-gradient-to-b from-slate-950 to-slate-900 text-white p-4 sm:p-6 flex flex-col lg:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">
-            INTEGRAX <span className="text-blue-400">Cloud</span>
-          </h2>
+      <aside className="w-full lg:w-64 bg-gradient-to-b from-slate-950 to-slate-900 text-white p-4 sm:p-6 lg:min-h-screen">
+  <div className="flex items-start justify-between gap-4 lg:block">
+    <div>
+      <h2 className="text-xl sm:text-2xl font-bold mb-1">
+        INTEGRAX <span className="text-blue-400">Cloud</span>
+      </h2>
 
-          <p className="text-xs text-slate-400">{empresaActiva.nombre}</p>
-          <p className="mb-6 text-xs text-slate-500">RUC: {empresaActiva.ruc}</p>
+      <p className="text-xs text-slate-400">{empresaActiva.nombre}</p>
+      <p className="text-xs text-slate-500">RUC: {empresaActiva.ruc}</p>
+      <p className="mt-2 text-xs text-slate-400 uppercase">
+        {usuarioActivo.nombre} / {usuarioActivo.rol}
+      </p>
+    </div>
 
-          <p className="mb-4 text-xs text-slate-400 uppercase">
-            {usuarioActivo.nombre} / {usuarioActivo.rol}
-          </p>
+    <div className="flex flex-col gap-2 lg:hidden">
+      <button
+        onClick={cerrarSesion}
+        className="rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold hover:bg-red-600"
+      >
+        Salir
+      </button>
+      <button
+        onClick={cambiarEmpresa}
+        className="rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold hover:bg-slate-800"
+      >
+        Empresa
+      </button>
+    </div>
+  </div>
 
-          <nav className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0 text-sm">
-            {menuActual.map(([id, textoMenu]) => (
-              <button
-                key={id}
-                onClick={() => setSeccion(id)}
-                className={`min-w-max lg:min-w-0 text-left px-4 py-3 rounded-xl transition-all duration-200 ${
-                  seccion === id
-                    ? "bg-blue-600 text-white shadow-lg scale-[1.02]"
-                    : "text-slate-300 hover:bg-slate-800 hover:translate-x-1"
-                }`}
-              >
-                {textoMenu}
-              </button>
-            ))}
-          </nav>
-        </div>
+  <nav className="mt-4 flex gap-2 overflow-x-auto pb-2 lg:mt-8 lg:flex-col lg:overflow-visible lg:pb-0 text-sm">
+    {menuActual.map(([id, textoMenu]) => (
+      <button
+        key={id}
+        onClick={() => setSeccion(id)}
+        className={`min-w-max lg:min-w-0 text-left px-4 py-3 rounded-xl transition-all duration-200 ${
+          seccion === id
+            ? "bg-blue-600 text-white shadow-lg"
+            : "text-slate-300 hover:bg-slate-800"
+        }`}
+      >
+        {textoMenu}
+      </button>
+    ))}
+  </nav>
 
-        <div className="mt-4 lg:mt-0 space-y-3">
-          <button
-            onClick={cerrarSesion}
-            className="w-full rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold hover:bg-red-600"
-          >
-            Cerrar sesión
-          </button>
+  <div className="hidden lg:block mt-8 space-y-3">
+    <button
+      onClick={cerrarSesion}
+      className="w-full rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold hover:bg-red-600"
+    >
+      Cerrar sesión
+    </button>
 
-          <button
-            onClick={cambiarEmpresa}
-            className="w-full rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-800"
-          >
-            Cambiar empresa
-          </button>
-        </div>
-      </aside>
-
-      <main className="flex-1 flex flex-col min-w-0">
+    <button
+      onClick={cambiarEmpresa}
+      className="w-full rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold hover:bg-slate-800"
+    >
+      Cambiar empresa
+    </button>
+  </div>
+</aside> className="flex-1 flex flex-col min-w-0">
         <header
           className={`border-b px-4 sm:px-8 py-4 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between items-start sm:items-center shadow-sm ${
             modoOscuro

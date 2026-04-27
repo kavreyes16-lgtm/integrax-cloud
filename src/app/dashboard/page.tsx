@@ -2413,7 +2413,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className={`flex min-h-screen flex-col lg:flex-row transition-colors duration-300 ${fondo}`}>
+   <div className={`flex min-h-screen flex-col lg:flex-row transition-colors duration-300 ${fondo}`}>
       <aside className="w-full lg:w-64 bg-gradient-to-b from-slate-950 to-slate-900 text-white p-4 sm:p-6 lg:min-h-screen">
         <div className="flex items-start justify-between gap-4 lg:block">
           <div>

@@ -63,6 +63,8 @@ export default function Dashboard() {
   const [cliente, setCliente] = useState("");
   const [tipoPago, setTipoPago] = useState("Efectivo");
   const [estadoPago, setEstadoPago] = useState("Pagada");
+  const [proyectoFactura, setProyectoFactura] = useState("");
+  const [descuentoFactura, setDescuentoFactura] = useState("");
   const [productoSeleccionado, setProductoSeleccionado] = useState("");
   const [itemsFactura, setItemsFactura] = useState<any[]>([]);
 
@@ -463,7 +465,52 @@ export default function Dashboard() {
   );
 
   const iva = subtotal * 0.15;
-  const totalConIVA = subtotal + iva;
+  const porcentajeDescuento = Math.min(100, Math.max(0, Number(descuentoFactura || 0)));
+const baseConIVA = subtotal + iva;
+const descuento = baseConIVA * (porcentajeDescuento / 100);
+const totalConIVA = baseConIVA - descuento;
+
+  const itemsFacturaAgrupados = Object.values(
+    itemsFactura.reduce((acc: any, item: any) => {
+      if (!acc[item.id]) {
+        acc[item.id] = {
+          ...item,
+          cantidad: 0,
+          subtotalLinea: 0,
+        };
+      }
+
+      acc[item.id].cantidad += 1;
+      acc[item.id].subtotalLinea += Number(item.precio || 0);
+
+      return acc;
+    }, {})
+  );
+
+  const aumentarCantidadFactura = (productoId: string) => {
+    const producto = productos.find((p) => p.id === productoId);
+    if (!producto) return;
+
+    const cantidadActual = itemsFactura.filter((item) => item.id === productoId).length;
+
+    if (cantidadActual >= Number(producto.stock || 0)) {
+      alert("No hay suficiente stock disponible");
+      return;
+    }
+
+    setItemsFactura([...itemsFactura, producto]);
+  };
+
+  const disminuirCantidadFactura = (productoId: string) => {
+    const index = itemsFactura.findIndex((item) => item.id === productoId);
+    if (index < 0) return;
+
+    setItemsFactura(itemsFactura.filter((_, i) => i !== index));
+  };
+
+  const limpiarListaFactura = () => {
+    setItemsFactura([]);
+  };
 
   const facturasValidas = facturas.filter((f) => f.estado !== "erronea");
 
@@ -561,8 +608,10 @@ export default function Dashboard() {
           cliente_ruc_cedula: clienteData?.ruc_cedula || "",
           tipo_pago: tipoPago,
           estado_pago: estadoPago,
+          proyecto: proyectoFactura,
           subtotal,
           iva,
+          descuento,
           total: totalConIVA,
           fecha: new Date().toLocaleDateString("es-NI"),
           hora: new Date().toLocaleTimeString("es-NI"),
@@ -620,6 +669,8 @@ export default function Dashboard() {
     setClienteSeleccionado("");
     setTipoPago("Efectivo");
     setEstadoPago("Pagada");
+    setProyectoFactura("");
+    setDescuentoFactura("");
     setItemsFactura([]);
     setProductoSeleccionado("");
 
@@ -2413,7 +2464,7 @@ export default function Dashboard() {
   }
 
   return (
-   <div className={`flex min-h-screen flex-col lg:flex-row transition-colors duration-300 ${fondo}`}>
+    <div className={`flex min-h-screen flex-col lg:flex-row transition-colors duration-300 ${fondo}`}>
       <aside className="w-full lg:w-64 bg-gradient-to-b from-slate-950 to-slate-900 text-white p-4 sm:p-6 lg:min-h-screen">
         <div className="flex items-start justify-between gap-4 lg:block">
           <div>
@@ -2478,7 +2529,7 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      <main className={`w-full overflow-x-hidden p-4 sm:p-6 lg:p-8 ${texto}`}>
+      <main className="flex-1 flex flex-col min-w-0">
         <header
           className={`border-b px-4 sm:px-8 py-4 flex flex-col sm:flex-row gap-3 sm:gap-0 justify-between items-start sm:items-center shadow-sm ${
             modoOscuro
@@ -2881,200 +2932,372 @@ export default function Dashboard() {
 
           {seccion === "facturacion" && (
             <section>
-              <h1 className="text-2xl sm:text-3xl font-bold">Facturación</h1>
-
-              <form onSubmit={guardarFactura} className="mt-6 space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <select
-                    value={clienteSeleccionado}
-                    onChange={(e) => {
-                      setClienteSeleccionado(e.target.value);
-                      const seleccionado = clientes.find((c) => c.id === e.target.value);
-                      setCliente(seleccionado?.nombre || "");
-                    }}
-                    className={inputClass}
-                  >
-                    <option value="">Seleccionar cliente guardado</option>
-                    {clientes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre} {c.ruc_cedula ? `- ${c.ruc_cedula}` : ""}
-                      </option>
-                    ))}
-                  </select>
-
-                  <input
-                    type="text"
-                    placeholder="Cliente manual"
-                    value={cliente}
-                    onChange={(e) => {
-                      setCliente(e.target.value);
-                      setClienteSeleccionado("");
-                    }}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <select
-                    value={tipoPago}
-                    onChange={(e) => setTipoPago(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="Efectivo">Pago en efectivo</option>
-                    <option value="Tarjeta">Pago con tarjeta</option>
-                    <option value="Transferencia">Pago por transferencia</option>
-                  </select>
-
-                  <select
-                    value={estadoPago}
-                    onChange={(e) => setEstadoPago(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="Pagada">Pagada</option>
-                    <option value="Pendiente">Pendiente</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <select
-                    value={productoSeleccionado}
-                    onChange={(e) => setProductoSeleccionado(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="">Seleccionar producto</option>
-
-                    {productos.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} - NIO {Number(p.precio).toFixed(2)} | Stock:{" "}
-                        {Number(p.stock || 0)}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    type="button"
-                    onClick={agregarProductoAFactura}
-                    className="bg-slate-900 text-white px-5 py-3 rounded-xl hover:bg-blue-600"
-                  >
-                    Agregar
-                  </button>
-                </div>
-
-                <div className={`rounded-2xl shadow-lg p-5 ${tarjeta}`}>
-                  <h2 className="font-bold mb-3">Productos en la factura</h2>
-
-                  {itemsFactura.length === 0 && (
-                    <p className="opacity-60">No hay productos agregados.</p>
-                  )}
-
-                  {itemsFactura.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col sm:flex-row gap-2 sm:justify-between border-b border-gray-300/20 py-2"
-                    >
-                      <span>{item.nombre}</span>
-
-                      <div className="flex flex-wrap gap-4">
-                        <span>NIO {Number(item.precio).toFixed(2)}</span>
-
-                        <button
-                          type="button"
-                          onClick={() => eliminarItemFactura(index)}
-                          className="text-red-500 font-semibold"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="mt-4 text-right space-y-1">
-                    <p>Subtotal: NIO {subtotal.toFixed(2)}</p>
-                    <p>IVA (15%): NIO {iva.toFixed(2)}</p>
-                    <p className="font-bold text-xl">
-                      Total: NIO {totalConIVA.toFixed(2)}
-                    </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+                    🧾
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold">Facturación</h1>
+                    <p className="text-sm opacity-70">Crea y gestiona tus facturas</p>
                   </div>
                 </div>
 
-                <button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700">
-                  Guardar factura
+                <button
+                  type="button"
+                  onClick={() => {
+                    const bloque = document.getElementById("facturas-guardadas");
+                    bloque?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="w-full sm:w-auto rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+                >
+                  Facturas guardadas ›
                 </button>
-              </form>
+              </div>
 
-              <div className="mt-8 space-y-4">
-                <h2 className="text-xl sm:text-2xl font-bold">Facturas guardadas</h2>
-
-                {facturas.length === 0 && (
-                  <p className="opacity-60">No hay facturas guardadas.</p>
-                )}
-
-                {facturas.map((f) => (
-                  <div
-                    key={f.id}
-                    className={`p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center ${tarjeta}`}
-                  >
-                    <div>
-                      <p><strong>No. Factura:</strong> {f.numero_factura || "Sin número"}</p>
-                      <p><strong>Cliente:</strong> {f.cliente}</p>
-                      {f.cliente_ruc_cedula && <p><strong>RUC/Cédula:</strong> {f.cliente_ruc_cedula}</p>}
-                      {f.cliente_telefono && <p><strong>Teléfono:</strong> {f.cliente_telefono}</p>}
-                      <p><strong>Empleado:</strong> {f.usuario_nombre}</p>
-                      <p><strong>Tipo de pago:</strong> {f.tipo_pago || "No especificado"}</p>
-                      <p>
-                        <strong>Estado de pago:</strong>{" "}
-                        <span className={f.estado_pago === "Pagada" ? "text-green-500 font-bold" : "text-orange-500 font-bold"}>
-                          {f.estado_pago || "No especificado"}
-                        </span>
-                      </p>
-                      <p><strong>Fecha:</strong> {f.fecha} {f.hora}</p>
-                      <p>
-                        <strong>Total:</strong> NIO{" "}
-                        {Number(f.total || 0).toFixed(2)}
-                      </p>
-
-                      <p>
-                        <strong>Estado:</strong>{" "}
-                        <span className={f.estado === "erronea" ? "text-red-500 font-bold" : "text-green-500 font-bold"}>
-                          {f.estado === "erronea" ? "Errónea" : "Válida"}
-                        </span>
-                      </p>
-
-                      {f.estado === "erronea" && (
-                        <p className="text-red-500 text-sm">
-                          <strong>Motivo:</strong> {f.motivo_error}
-                        </p>
-                      )}
+              <form onSubmit={guardarFactura} className="mt-6">
+                <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+                  <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${modoOscuro ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">👤</span>
+                      <h2 className="text-lg font-bold">1. Cliente</h2>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => generarPDF(f)}
-                        className="bg-green-600 px-4 py-2 text-white rounded-xl hover:bg-green-700"
+                    <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+                      <select
+                        value={clienteSeleccionado}
+                        onChange={(e) => {
+                          setClienteSeleccionado(e.target.value);
+                          const seleccionado = clientes.find((c) => c.id === e.target.value);
+                          setCliente(seleccionado?.nombre || "");
+                        }}
+                        className={inputClass}
                       >
-                        PDF
+                        <option value="">Buscar cliente por nombre, cédula o teléfono...</option>
+                        {clientes.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nombre} {c.ruc_cedula ? `- ${c.ruc_cedula}` : ""}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => setSeccion("clientes")}
+                        className="rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-semibold text-blue-700 hover:bg-blue-100"
+                      >
+                        + Nuevo cliente
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Cliente manual"
+                      value={cliente}
+                      onChange={(e) => {
+                        setCliente(e.target.value);
+                        setClienteSeleccionado("");
+                      }}
+                      className={`${inputClass} mt-3`}
+                    />
+
+                    {cliente && (
+                      <div className={`mt-3 rounded-2xl border p-4 ${modoOscuro ? "border-green-500/30 bg-green-500/10" : "border-green-200 bg-green-50"}`}>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-600 text-white">
+                              👤
+                            </div>
+                            <div>
+                              <p className="font-bold">{cliente}</p>
+                              <p className="text-sm opacity-70">
+                                {clientes.find((c) => c.id === clienteSeleccionado)?.ruc_cedula
+                                  ? `RUC/Cédula: ${clientes.find((c) => c.id === clienteSeleccionado)?.ruc_cedula}`
+                                  : "Cliente seleccionado/manual"}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-sm font-semibold text-green-600">✓ Cliente seleccionado</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-5">
+                      <label className="mb-2 block text-sm font-semibold">Proyecto</label>
+                      <input
+                        type="text"
+                        placeholder="Ejemplo: Instalación cuarto frío / Proyecto CW-001"
+                        value={proyectoFactura}
+                        onChange={(e) => setProyectoFactura(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="mt-7 flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">📦</span>
+                      <h2 className="text-lg font-bold">2. Producto</h2>
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                      <select
+                        value={productoSeleccionado}
+                        onChange={(e) => setProductoSeleccionado(e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="">Buscar producto por nombre o código de barras...</option>
+                        {productos.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nombre} - NIO {Number(p.precio).toFixed(2)} | Stock: {Number(p.stock || 0)}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={agregarProductoAFactura}
+                        className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+                      >
+                        Agregar
+                      </button>
+                    </div>
+
+                    <div className={`mt-4 overflow-hidden rounded-2xl border ${modoOscuro ? "border-slate-700" : "border-gray-200"}`}>
+                      <div className={`hidden grid-cols-[1fr_140px_150px_120px] gap-3 px-4 py-3 text-sm font-bold md:grid ${modoOscuro ? "bg-slate-800" : "bg-slate-50"}`}>
+                        <span>Producto</span>
+                        <span>Cantidad</span>
+                        <span>Precio unitario</span>
+                        <span>Acciones</span>
+                      </div>
+
+                      {itemsFacturaAgrupados.length === 0 && (
+                        <div className="p-5 text-sm opacity-60">
+                          No hay productos agregados.
+                        </div>
+                      )}
+
+                      {itemsFacturaAgrupados.map((item: any) => (
+                        <div
+                          key={item.id}
+                          className={`grid gap-3 border-t px-4 py-4 md:grid-cols-[1fr_140px_150px_120px] md:items-center ${modoOscuro ? "border-slate-700" : "border-gray-100"}`}
+                        >
+                          <div>
+                            <p className="font-bold">{item.nombre}</p>
+                            <p className="text-xs opacity-60">{item.codigo || "Sin código"}</p>
+                          </div>
+
+                          <div className="flex w-fit items-center rounded-xl border border-gray-200 bg-white text-slate-900">
+                            <button
+                              type="button"
+                              onClick={() => disminuirCantidadFactura(item.id)}
+                              className="px-3 py-2 font-bold"
+                            >
+                              −
+                            </button>
+                            <span className="min-w-10 px-2 text-center font-semibold">{item.cantidad}</span>
+                            <button
+                              type="button"
+                              onClick={() => aumentarCantidadFactura(item.id)}
+                              className="px-3 py-2 font-bold"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <p className="font-semibold">NIO {Number(item.precio || 0).toFixed(2)}</p>
+
+                          <button
+                            type="button"
+                            onClick={() => setItemsFactura(itemsFactura.filter((i) => i.id !== item.id))}
+                            className="w-fit rounded-xl bg-red-50 px-4 py-2 font-semibold text-red-600 hover:bg-red-100"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <button
+                        type="button"
+                        onClick={limpiarListaFactura}
+                        className="w-full sm:w-auto rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold hover:bg-slate-50"
+                      >
+                        🗑 Limpiar lista
                       </button>
 
-                      {usuarioActivo.rol === "admin" && f.estado !== "erronea" && (
-                        <button
-                          onClick={() => marcarFacturaErronea(f)}
-                          className="bg-yellow-500 px-4 py-2 text-white rounded-xl hover:bg-yellow-600"
-                        >
-                          Marcar error
-                        </button>
-                      )}
-
-                      {usuarioActivo.rol === "admin" && (
-                        <button
-                          onClick={() => eliminarFactura(f.id)}
-                          className="bg-red-500 px-4 py-2 text-white rounded-xl hover:bg-red-600"
-                        >
-                          Eliminar
-                        </button>
-                      )}
+                      <p className="text-sm opacity-70">
+                        {itemsFactura.length} productos agregados
+                      </p>
                     </div>
                   </div>
-                ))}
+
+                  <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${modoOscuro ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"}`}>
+                    <h2 className="text-lg font-bold">Resumen de la factura</h2>
+
+                    <div className={`mt-4 rounded-2xl border p-4 ${modoOscuro ? "border-blue-500/30 bg-blue-500/10" : "border-blue-100 bg-blue-50"}`}>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="text-xs font-semibold opacity-70">Método de pago</label>
+                          <select
+                            value={tipoPago}
+                            onChange={(e) => setTipoPago(e.target.value)}
+                            className={`${inputClass} mt-1`}
+                          >
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                            <option value="Transferencia">Transferencia</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold opacity-70">Estado</label>
+                          <select
+                            value={estadoPago}
+                            onChange={(e) => setEstadoPago(e.target.value)}
+                            className={`${inputClass} mt-1`}
+                          >
+                            <option value="Pagada">Pagada</option>
+                            <option value="Pendiente">Pendiente</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      <div className="flex justify-between gap-3">
+                        <span>Subtotal ({itemsFactura.length} productos)</span>
+                        <strong>NIO {subtotal.toFixed(2)}</strong>
+                      </div>
+
+                      <div className="flex justify-between gap-3">
+                        <span>IVA (15%)</span>
+                        <strong>NIO {iva.toFixed(2)}</strong>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-sm font-semibold">Descuento (%)</label>
+<input
+  type="number"
+  min="0"
+  max="100"
+  placeholder="Ej: 10"
+  value={descuentoFactura}
+  onChange={(e) => setDescuentoFactura(e.target.value)}
+  className={inputClass}
+/>
+
+<p className="mt-2 text-sm opacity-70">
+  Descuento aplicado: NIO {descuento.toFixed(2)}
+</p>
+                      </div>
+
+                      <div className="border-t border-gray-300/20 pt-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-bold">TOTAL A PAGAR</span>
+                          <strong className="text-2xl text-green-600">
+                            NIO {totalConIVA.toFixed(2)}
+                          </strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button className="mt-6 w-full rounded-xl bg-green-600 px-6 py-4 text-lg font-bold text-white hover:bg-green-700">
+                      🧾 FINALIZAR FACTURA
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="mt-3 w-full rounded-xl border border-green-200 px-6 py-4 font-bold text-green-600 hover:bg-green-50"
+                    >
+                      🖨 VISTA PREVIA
+                    </button>
+
+                    <div className={`mt-6 rounded-2xl p-4 text-sm ${modoOscuro ? "bg-slate-800" : "bg-blue-50"}`}>
+                      <p className="font-bold text-blue-500">ℹ Información importante</p>
+                      <p className="mt-2">✓ Verifica los datos antes de finalizar la factura.</p>
+                      <p className="mt-1">✓ No podrás editarla después de guardarla.</p>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+              <div id="facturas-guardadas" className={`mt-6 rounded-2xl border p-4 sm:p-6 shadow-sm ${modoOscuro ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"}`}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h2 className="text-xl sm:text-2xl font-bold">Facturas guardadas</h2>
+                  <span className="text-sm opacity-70">{facturas.length} registradas</span>
+                </div>
+
+                {facturas.length === 0 && (
+                  <p className="mt-4 opacity-60">No hay facturas guardadas.</p>
+                )}
+
+                {facturas.length > 0 && (
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full min-w-[800px] text-left text-sm">
+                      <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+                        <tr>
+                          <th className="px-4 py-3"># Factura</th>
+                          <th className="px-4 py-3">Fecha</th>
+                          <th className="px-4 py-3">Cliente</th>
+                          <th className="px-4 py-3">Proyecto</th>
+                          <th className="px-4 py-3">Total</th>
+                          <th className="px-4 py-3">Estado</th>
+                          <th className="px-4 py-3">Acciones</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {facturas.map((f) => (
+                          <tr key={f.id} className={`border-t ${modoOscuro ? "border-slate-700" : "border-gray-100"}`}>
+                            <td className="px-4 py-3 font-semibold">{f.numero_factura || "Sin número"}</td>
+                            <td className="px-4 py-3">{f.fecha} {f.hora}</td>
+                            <td className="px-4 py-3">{f.cliente}</td>
+                            <td className="px-4 py-3">{f.proyecto || "Sin proyecto"}</td>
+                            <td className="px-4 py-3 font-semibold">NIO {Number(f.total || 0).toFixed(2)}</td>
+                            <td className="px-4 py-3">
+                              <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                f.estado_pago === "Pagada"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-orange-100 text-orange-700"
+                              }`}>
+                                {f.estado_pago || "No especificado"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => generarPDF(f)}
+                                  className="rounded-xl bg-blue-50 px-3 py-2 font-semibold text-blue-600 hover:bg-blue-100"
+                                >
+                                  Ver/PDF
+                                </button>
+
+                                {usuarioActivo.rol === "admin" && f.estado !== "erronea" && (
+                                  <button
+                                    onClick={() => marcarFacturaErronea(f)}
+                                    className="rounded-xl bg-yellow-50 px-3 py-2 font-semibold text-yellow-600 hover:bg-yellow-100"
+                                  >
+                                    Error
+                                  </button>
+                                )}
+
+                                {usuarioActivo.rol === "admin" && (
+                                  <button
+                                    onClick={() => eliminarFactura(f.id)}
+                                    className="rounded-xl bg-red-50 px-3 py-2 font-semibold text-red-600 hover:bg-red-100"
+                                  >
+                                    Eliminar
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </section>
           )}

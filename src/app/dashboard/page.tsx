@@ -49,6 +49,32 @@ export default function Dashboard() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [clientes, setClientes] = useState<any[]>([]);
   const [clienteSeleccionado, setClienteSeleccionado] = useState("");
+  const [tipoClienteRegistro, setTipoClienteRegistro] = useState<"natural" | "juridico">("natural");
+
+const [nombresClienteNuevo, setNombresClienteNuevo] = useState("");
+const [apellidosClienteNuevo, setApellidosClienteNuevo] = useState("");
+const [fechaNacimientoClienteNuevo, setFechaNacimientoClienteNuevo] = useState("");
+const [nacionalidadClienteNuevo, setNacionalidadClienteNuevo] = useState("");
+const [sexoClienteNuevo, setSexoClienteNuevo] = useState("");
+const [estadoCivilClienteNuevo, setEstadoCivilClienteNuevo] = useState("");
+const [ocupacionClienteNuevo, setOcupacionClienteNuevo] = useState("");
+const [empleadorClienteNuevo, setEmpleadorClienteNuevo] = useState("");
+const [actividadEconomicaClienteNuevo, setActividadEconomicaClienteNuevo] = useState("");
+const [ingresosMensualesClienteNuevo, setIngresosMensualesClienteNuevo] = useState("");
+const [origenFondosClienteNuevo, setOrigenFondosClienteNuevo] = useState("");
+const [propositoRelacionClienteNuevo, setPropositoRelacionClienteNuevo] = useState("");
+const [perfilTransaccionalClienteNuevo, setPerfilTransaccionalClienteNuevo] = useState("");
+const [pepClienteNuevo, setPepClienteNuevo] = useState("No");
+const [nivelRiesgoClienteNuevo, setNivelRiesgoClienteNuevo] = useState("Bajo");
+
+const [razonSocialClienteNuevo, setRazonSocialClienteNuevo] = useState("");
+const [nombreComercialClienteNuevo, setNombreComercialClienteNuevo] = useState("");
+const [fechaConstitucionClienteNuevo, setFechaConstitucionClienteNuevo] = useState("");
+const [paisClienteNuevo, setPaisClienteNuevo] = useState("");
+const [representanteLegalClienteNuevo, setRepresentanteLegalClienteNuevo] = useState("");
+const [documentoRepresentanteClienteNuevo, setDocumentoRepresentanteClienteNuevo] = useState("");
+const [beneficiarioFinalClienteNuevo, setBeneficiarioFinalClienteNuevo] = useState("");
+const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState("");
   const [nombreClienteNuevo, setNombreClienteNuevo] = useState("");
   const [telefonoClienteNuevo, setTelefonoClienteNuevo] = useState("");
   const [correoClienteNuevo, setCorreoClienteNuevo] = useState("");
@@ -527,42 +553,112 @@ const totalConIVA = baseConIVA - descuento;
     facturasValidas.length > 0 ? totalVendido / facturasValidas.length : 0;
 
   const crearCliente = async (e: any) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!empresaActiva) return;
+  if (!empresaActiva || !usuarioActivo) return;
 
-    if (!nombreClienteNuevo) {
-      alert("Escribe el nombre del cliente");
-      return;
-    }
+  const esNatural = tipoClienteRegistro === "natural";
 
-    const { error } = await supabase.from("clientes").insert([
-      {
-        empresa_ruc: empresaActiva.ruc,
-        nombre: nombreClienteNuevo,
-        telefono: telefonoClienteNuevo,
-        correo: correoClienteNuevo,
-        direccion: direccionClienteNuevo,
-        ruc_cedula: rucCedulaClienteNuevo,
-      },
-    ]);
+  const nombreFinal = esNatural
+    ? `${nombresClienteNuevo} ${apellidosClienteNuevo}`.trim()
+    : razonSocialClienteNuevo;
 
-    if (error) {
-      console.error(error);
-      alert("Error guardando cliente");
-      return;
-    }
+  if (!nombreFinal) {
+    alert("Debes completar el nombre del cliente");
+    return;
+  }
 
-    await cargarClientes(empresaActiva.ruc);
+  if (esNatural && !rucCedulaClienteNuevo) {
+    alert("Debes ingresar el documento de identidad del cliente natural");
+    return;
+  }
 
-    setNombreClienteNuevo("");
-    setTelefonoClienteNuevo("");
-    setCorreoClienteNuevo("");
-    setDireccionClienteNuevo("");
-    setRucCedulaClienteNuevo("");
+  if (!esNatural && !rucCedulaClienteNuevo) {
+    alert("Debes ingresar el RUC de la persona jurídica");
+    return;
+  }
 
-    alert("Cliente guardado correctamente");
-  };
+  const { error } = await supabase.from("clientes").insert([
+    {
+      empresa_ruc: empresaActiva.ruc,
+      tipo_cliente: tipoClienteRegistro,
+
+      nombre: nombreFinal,
+      telefono: telefonoClienteNuevo,
+      correo: correoClienteNuevo,
+      direccion: direccionClienteNuevo,
+      ruc_cedula: rucCedulaClienteNuevo,
+
+      nombres: nombresClienteNuevo,
+      apellidos: apellidosClienteNuevo,
+      fecha_nacimiento: fechaNacimientoClienteNuevo || null,
+      nacionalidad: nacionalidadClienteNuevo,
+      sexo: sexoClienteNuevo,
+      estado_civil: estadoCivilClienteNuevo,
+      ocupacion: ocupacionClienteNuevo,
+      empleador: empleadorClienteNuevo,
+      actividad_economica: actividadEconomicaClienteNuevo,
+      ingresos_mensuales: Number(ingresosMensualesClienteNuevo || 0),
+      origen_fondos: origenFondosClienteNuevo,
+      proposito_relacion: propositoRelacionClienteNuevo,
+      perfil_transaccional: perfilTransaccionalClienteNuevo,
+      pep: pepClienteNuevo === "Si",
+      nivel_riesgo: nivelRiesgoClienteNuevo,
+
+      razon_social: razonSocialClienteNuevo,
+      nombre_comercial: nombreComercialClienteNuevo,
+      fecha_constitucion: fechaConstitucionClienteNuevo || null,
+      pais: paisClienteNuevo,
+      representante_legal: representanteLegalClienteNuevo,
+      documento_representante: documentoRepresentanteClienteNuevo,
+      beneficiario_final: beneficiarioFinalClienteNuevo,
+
+      usuario_registro: usuarioActivo.nombre,
+      usuario_aprobador: usuarioAprobadorClienteNuevo,
+    },
+  ]);
+
+  if (error) {
+    console.error(error);
+    alert("Error guardando cliente");
+    return;
+  }
+
+  await cargarClientes(empresaActiva.ruc);
+
+  setNombreClienteNuevo("");
+  setTelefonoClienteNuevo("");
+  setCorreoClienteNuevo("");
+  setDireccionClienteNuevo("");
+  setRucCedulaClienteNuevo("");
+
+  setNombresClienteNuevo("");
+  setApellidosClienteNuevo("");
+  setFechaNacimientoClienteNuevo("");
+  setNacionalidadClienteNuevo("");
+  setSexoClienteNuevo("");
+  setEstadoCivilClienteNuevo("");
+  setOcupacionClienteNuevo("");
+  setEmpleadorClienteNuevo("");
+  setActividadEconomicaClienteNuevo("");
+  setIngresosMensualesClienteNuevo("");
+  setOrigenFondosClienteNuevo("");
+  setPropositoRelacionClienteNuevo("");
+  setPerfilTransaccionalClienteNuevo("");
+  setPepClienteNuevo("No");
+  setNivelRiesgoClienteNuevo("Bajo");
+
+  setRazonSocialClienteNuevo("");
+  setNombreComercialClienteNuevo("");
+  setFechaConstitucionClienteNuevo("");
+  setPaisClienteNuevo("");
+  setRepresentanteLegalClienteNuevo("");
+  setDocumentoRepresentanteClienteNuevo("");
+  setBeneficiarioFinalClienteNuevo("");
+  setUsuarioAprobadorClienteNuevo("");
+
+  alert("Cliente guardado correctamente");
+};
 
   const eliminarCliente = async (id?: string) => {
     if (usuarioActivo?.rol !== "admin" || !id || !empresaActiva) return;
@@ -2830,105 +2926,211 @@ const totalConIVA = baseConIVA - descuento;
           )}
 
           {seccion === "clientes" && usuarioActivo.rol === "admin" && (
-            <section>
-              <h1 className="text-2xl sm:text-3xl font-bold">Clientes</h1>
-              <p className="mt-2 opacity-70">
-                Registra clientes para facturación profesional e historial de ventas.
+  <section>
+    <h1 className="text-2xl sm:text-3xl font-bold">Clientes</h1>
+    <p className="mt-2 opacity-70">
+      Registro de clientes según perfil PIC: Persona Natural o Persona Jurídica.
+    </p>
+
+    <div className={`mt-6 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
+      <p className="font-bold mb-4">Tipo de cliente</p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => setTipoClienteRegistro("natural")}
+          className={`rounded-2xl border px-5 py-4 font-bold ${
+            tipoClienteRegistro === "natural"
+              ? "border-blue-600 bg-blue-600 text-white"
+              : "border-gray-300 bg-white text-gray-800"
+          }`}
+        >
+          Persona Natural
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTipoClienteRegistro("juridico")}
+          className={`rounded-2xl border px-5 py-4 font-bold ${
+            tipoClienteRegistro === "juridico"
+              ? "border-blue-600 bg-blue-600 text-white"
+              : "border-gray-300 bg-white text-gray-800"
+          }`}
+        >
+          Persona Jurídica
+        </button>
+      </div>
+    </div>
+
+    <form
+      onSubmit={crearCliente}
+      className={`mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}
+    >
+      {tipoClienteRegistro === "natural" && (
+        <>
+          <div className="md:col-span-2">
+            <h2 className="text-xl font-bold">PIC Persona Natural</h2>
+            <p className="text-sm opacity-70">
+              Datos mínimos requeridos para identificación, actividad económica, origen de fondos y riesgo.
+            </p>
+          </div>
+
+          <input type="text" placeholder="Nombres" value={nombresClienteNuevo} onChange={(e) => setNombresClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Apellidos" value={apellidosClienteNuevo} onChange={(e) => setApellidosClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Cédula / Pasaporte / Residencia" value={rucCedulaClienteNuevo} onChange={(e) => setRucCedulaClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="date" value={fechaNacimientoClienteNuevo} onChange={(e) => setFechaNacimientoClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Nacionalidad" value={nacionalidadClienteNuevo} onChange={(e) => setNacionalidadClienteNuevo(e.target.value)} className={inputClass} />
+
+          <select value={sexoClienteNuevo} onChange={(e) => setSexoClienteNuevo(e.target.value)} className={inputClass}>
+            <option value="">Sexo</option>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+          </select>
+
+          <select value={estadoCivilClienteNuevo} onChange={(e) => setEstadoCivilClienteNuevo(e.target.value)} className={inputClass}>
+            <option value="">Estado civil</option>
+            <option value="Soltero/a">Soltero/a</option>
+            <option value="Casado/a">Casado/a</option>
+            <option value="Unión de hecho">Unión de hecho</option>
+            <option value="Divorciado/a">Divorciado/a</option>
+            <option value="Viudo/a">Viudo/a</option>
+          </select>
+
+          <input type="text" placeholder="Teléfono" value={telefonoClienteNuevo} onChange={(e) => setTelefonoClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="email" placeholder="Correo electrónico" value={correoClienteNuevo} onChange={(e) => setCorreoClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Dirección domiciliar completa" value={direccionClienteNuevo} onChange={(e) => setDireccionClienteNuevo(e.target.value)} className={`${inputClass} md:col-span-2`} />
+
+          <input type="text" placeholder="Profesión u ocupación" value={ocupacionClienteNuevo} onChange={(e) => setOcupacionClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Nombre del empleador o negocio" value={empleadorClienteNuevo} onChange={(e) => setEmpleadorClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Actividad económica" value={actividadEconomicaClienteNuevo} onChange={(e) => setActividadEconomicaClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="number" placeholder="Ingresos mensuales estimados" value={ingresosMensualesClienteNuevo} onChange={(e) => setIngresosMensualesClienteNuevo(e.target.value)} className={inputClass} />
+
+          <input type="text" placeholder="Origen de fondos" value={origenFondosClienteNuevo} onChange={(e) => setOrigenFondosClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Propósito de la relación" value={propositoRelacionClienteNuevo} onChange={(e) => setPropositoRelacionClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Perfil transaccional" value={perfilTransaccionalClienteNuevo} onChange={(e) => setPerfilTransaccionalClienteNuevo(e.target.value)} className={inputClass} />
+
+          <select value={pepClienteNuevo} onChange={(e) => setPepClienteNuevo(e.target.value)} className={inputClass}>
+            <option value="No">PEP: No</option>
+            <option value="Si">PEP: Sí</option>
+          </select>
+
+          <select value={nivelRiesgoClienteNuevo} onChange={(e) => setNivelRiesgoClienteNuevo(e.target.value)} className={inputClass}>
+            <option value="Bajo">Riesgo bajo</option>
+            <option value="Medio">Riesgo medio</option>
+            <option value="Alto">Riesgo alto</option>
+          </select>
+        </>
+      )}
+
+      {tipoClienteRegistro === "juridico" && (
+        <>
+          <div className="md:col-span-2">
+            <h2 className="text-xl font-bold">PIC Persona Jurídica</h2>
+            <p className="text-sm opacity-70">
+              Datos mínimos requeridos para empresas, representante legal, beneficiario final y perfil de riesgo.
+            </p>
+          </div>
+
+          <input type="text" placeholder="Razón social" value={razonSocialClienteNuevo} onChange={(e) => setRazonSocialClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Nombre comercial" value={nombreComercialClienteNuevo} onChange={(e) => setNombreComercialClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="RUC" value={rucCedulaClienteNuevo} onChange={(e) => setRucCedulaClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="date" value={fechaConstitucionClienteNuevo} onChange={(e) => setFechaConstitucionClienteNuevo(e.target.value)} className={inputClass} />
+
+          <input type="text" placeholder="País" value={paisClienteNuevo} onChange={(e) => setPaisClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Teléfono" value={telefonoClienteNuevo} onChange={(e) => setTelefonoClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="email" placeholder="Correo electrónico" value={correoClienteNuevo} onChange={(e) => setCorreoClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Dirección" value={direccionClienteNuevo} onChange={(e) => setDireccionClienteNuevo(e.target.value)} className={inputClass} />
+
+          <input type="text" placeholder="Actividad económica" value={actividadEconomicaClienteNuevo} onChange={(e) => setActividadEconomicaClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Representante legal" value={representanteLegalClienteNuevo} onChange={(e) => setRepresentanteLegalClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Documento del representante" value={documentoRepresentanteClienteNuevo} onChange={(e) => setDocumentoRepresentanteClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Beneficiario final" value={beneficiarioFinalClienteNuevo} onChange={(e) => setBeneficiarioFinalClienteNuevo(e.target.value)} className={inputClass} />
+
+          <input type="text" placeholder="Origen de fondos" value={origenFondosClienteNuevo} onChange={(e) => setOrigenFondosClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Propósito de la relación" value={propositoRelacionClienteNuevo} onChange={(e) => setPropositoRelacionClienteNuevo(e.target.value)} className={inputClass} />
+          <input type="text" placeholder="Perfil transaccional" value={perfilTransaccionalClienteNuevo} onChange={(e) => setPerfilTransaccionalClienteNuevo(e.target.value)} className={inputClass} />
+
+          <select value={pepClienteNuevo} onChange={(e) => setPepClienteNuevo(e.target.value)} className={inputClass}>
+            <option value="No">PEP relacionado: No</option>
+            <option value="Si">PEP relacionado: Sí</option>
+          </select>
+
+          <select value={nivelRiesgoClienteNuevo} onChange={(e) => setNivelRiesgoClienteNuevo(e.target.value)} className={inputClass}>
+            <option value="Bajo">Riesgo bajo</option>
+            <option value="Medio">Riesgo medio</option>
+            <option value="Alto">Riesgo alto</option>
+          </select>
+
+          <input type="text" placeholder="Usuario aprobador" value={usuarioAprobadorClienteNuevo} onChange={(e) => setUsuarioAprobadorClienteNuevo(e.target.value)} className={inputClass} />
+        </>
+      )}
+
+      <button className="md:col-span-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700">
+        Guardar cliente
+      </button>
+    </form>
+
+    <div className="mt-8 space-y-4">
+      <h2 className="text-xl sm:text-2xl font-bold">Clientes registrados</h2>
+
+      {clientes.length === 0 && (
+        <p className="opacity-60">No hay clientes registrados.</p>
+      )}
+
+      {clientes.map((c) => {
+        const facturasCliente = facturas.filter(
+          (f) => f.cliente_id === c.id || f.cliente === c.nombre
+        );
+
+        const totalCliente = facturasCliente
+          .filter((f) => f.estado !== "erronea")
+          .reduce((sum, f) => sum + Number(f.total || 0), 0);
+
+        return (
+          <div
+            key={c.id}
+            className={`p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center ${tarjeta}`}
+          >
+            <div>
+              <p className="font-bold">{c.nombre}</p>
+              <p>
+                Tipo:{" "}
+                <span className="font-semibold">
+                  {c.tipo_cliente === "juridico" ? "Persona Jurídica" : "Persona Natural"}
+                </span>
               </p>
+              <p>RUC/Cédula: {c.ruc_cedula || "No registrado"}</p>
+              <p>Teléfono: {c.telefono || "No registrado"}</p>
+              <p>Correo: {c.correo || "No registrado"}</p>
+              <p>Dirección: {c.direccion || "No registrada"}</p>
 
-              <form
-                onSubmit={crearCliente}
-                className={`mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}
-              >
-                <input
-                  type="text"
-                  placeholder="Nombre del cliente"
-                  value={nombreClienteNuevo}
-                  onChange={(e) => setNombreClienteNuevo(e.target.value)}
-                  className={inputClass}
-                />
+              {c.tipo_cliente === "juridico" && (
+                <>
+                  <p>Representante legal: {c.representante_legal || "No registrado"}</p>
+                  <p>Beneficiario final: {c.beneficiario_final || "No registrado"}</p>
+                </>
+              )}
 
-                <input
-                  type="text"
-                  placeholder="RUC o cédula"
-                  value={rucCedulaClienteNuevo}
-                  onChange={(e) => setRucCedulaClienteNuevo(e.target.value)}
-                  className={inputClass}
-                />
+              <p>Nivel de riesgo: {c.nivel_riesgo || "No definido"}</p>
+              <p>PEP: {c.pep ? "Sí" : "No"}</p>
 
-                <input
-                  type="text"
-                  placeholder="Teléfono"
-                  value={telefonoClienteNuevo}
-                  onChange={(e) => setTelefonoClienteNuevo(e.target.value)}
-                  className={inputClass}
-                />
+              <p className="mt-2 font-semibold">
+                Facturas: {facturasCliente.length} | Total comprado: NIO {totalCliente.toFixed(2)}
+              </p>
+            </div>
 
-                <input
-                  type="email"
-                  placeholder="Correo"
-                  value={correoClienteNuevo}
-                  onChange={(e) => setCorreoClienteNuevo(e.target.value)}
-                  className={inputClass}
-                />
-
-                <input
-                  type="text"
-                  placeholder="Dirección"
-                  value={direccionClienteNuevo}
-                  onChange={(e) => setDireccionClienteNuevo(e.target.value)}
-                  className={`${inputClass} md:col-span-2`}
-                />
-
-                <button className="md:col-span-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700">
-                  Guardar cliente
-                </button>
-              </form>
-
-              <div className="mt-8 space-y-4">
-                <h2 className="text-xl sm:text-2xl font-bold">Clientes registrados</h2>
-
-                {clientes.length === 0 && (
-                  <p className="opacity-60">No hay clientes registrados.</p>
-                )}
-
-                {clientes.map((c) => {
-                  const facturasCliente = facturas.filter(
-                    (f) => f.cliente_id === c.id || f.cliente === c.nombre
-                  );
-
-                  const totalCliente = facturasCliente
-                    .filter((f) => f.estado !== "erronea")
-                    .reduce((sum, f) => sum + Number(f.total || 0), 0);
-
-                  return (
-                    <div
-                      key={c.id}
-                      className={`p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center ${tarjeta}`}
-                    >
-                      <div>
-                        <p className="font-bold">{c.nombre}</p>
-                        <p>RUC/Cédula: {c.ruc_cedula || "No registrado"}</p>
-                        <p>Teléfono: {c.telefono || "No registrado"}</p>
-                        <p>Correo: {c.correo || "No registrado"}</p>
-                        <p>Dirección: {c.direccion || "No registrada"}</p>
-                        <p className="mt-2 font-semibold">
-                          Facturas: {facturasCliente.length} | Total comprado: NIO {totalCliente.toFixed(2)}
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => eliminarCliente(c.id)}
-                        className="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+            <button
+              onClick={() => eliminarCliente(c.id)}
+              className="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600"
+            >
+              Eliminar
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+)}
 
           {seccion === "facturacion" && (
             <section>

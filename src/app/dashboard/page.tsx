@@ -121,6 +121,18 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
   const [nombreProducto, setNombreProducto] = useState("");
   const [codigoProducto, setCodigoProducto] = useState("");
   const [categoriaProducto, setCategoriaProducto] = useState("");
+  const [bodegas, setBodegas] = useState<any[]>([]);
+const [bodegaProducto, setBodegaProducto] = useState("");
+
+const [nombreBodega, setNombreBodega] = useState("");
+const [tipoBodega, setTipoBodega] = useState("Principal");
+const [ubicacionBodega, setUbicacionBodega] = useState("");
+const [responsableBodega, setResponsableBodega] = useState("");
+const [telefonoBodega, setTelefonoBodega] = useState("");
+
+const [filtroCodigo, setFiltroCodigo] = useState("");
+const [filtroCategoria, setFiltroCategoria] = useState("");
+const [filtroBodega, setFiltroBodega] = useState("");
   const [precioProducto, setPrecioProducto] = useState("");
   const [stockProducto, setStockProducto] = useState("");
   const [stockMinimoProducto, setStockMinimoProducto] = useState("");
@@ -163,6 +175,48 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
 
     setProductos(data || []);
   };
+  const cargarBodegas = async (rucEmpresa: string) => {
+  const { data } = await supabase
+    .from("bodegas")
+    .select("*")
+    .eq("empresa_ruc", rucEmpresa)
+    .order("created_at", { ascending: false });
+
+  setBodegas(data || []);
+};
+const guardarBodega = async () => {
+  if (!nombreBodega || !empresaActiva) {
+    alert("Completa el nombre de la bodega");
+    return;
+  }
+
+  const { error } = await supabase.from("bodegas").insert([
+    {
+      empresa_ruc: empresaActiva.ruc,
+      nombre: nombreBodega,
+      tipo: tipoBodega,
+      ubicacion: ubicacionBodega,
+      responsable: responsableBodega,
+      telefono: telefonoBodega,
+    },
+  ]);
+
+  if (error) {
+    console.error(error);
+    alert("Error guardando bodega");
+    return;
+  }
+
+  setNombreBodega("");
+  setTipoBodega("Principal");
+  setUbicacionBodega("");
+  setResponsableBodega("");
+  setTelefonoBodega("");
+
+  await cargarBodegas(empresaActiva.ruc);
+
+  alert("Bodega registrada correctamente");
+};
 
   const cargarFacturas = async (rucEmpresa: string) => {
     const { data } = await supabase
@@ -358,14 +412,15 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
   };
 
   const limpiarFormularioProducto = () => {
-    setNombreProducto("");
-    setCodigoProducto("");
-    setCategoriaProducto("");
-    setPrecioProducto("");
-    setStockProducto("");
-    setStockMinimoProducto("");
-    setProductoEditandoId(null);
-  };
+  setNombreProducto("");
+  setCodigoProducto("");
+  setCategoriaProducto("");
+  setBodegaProducto("");
+  setPrecioProducto("");
+  setStockProducto("");
+  setStockMinimoProducto("");
+  setProductoEditandoId(null);
+};
 
   const agregarProductoInventario = async (e: any) => {
     e.preventDefault();
@@ -380,6 +435,7 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
       nombre: nombreProducto,
       codigo: codigoProducto,
       categoria: categoriaProducto,
+      bodega_id: bodegaProducto || null,
       precio: Number(precioProducto),
       stock: Number(stockProducto || 0),
       stock_minimo: Number(stockMinimoProducto || 5),
@@ -399,6 +455,7 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
       }
 
       await cargarProductos(empresaActiva.ruc);
+      await cargarBodegas(empresaActiva.ruc);
       limpiarFormularioProducto();
       alert("Producto actualizado correctamente");
       return;
@@ -3505,148 +3562,350 @@ const totalConIVA = baseConIVA - descuento;
           )}
 
           {seccion === "inventario" && (
-            <section>
-              <h1 className="text-2xl sm:text-3xl font-bold">Inventario</h1>
+  <section>
+    <h1 className="text-2xl sm:text-3xl font-bold">Inventario</h1>
+    <p className="mt-2 opacity-70">
+      Control de productos, bodegas, stock, precios y ubicación de inventario.
+    </p>
 
-              <form
-                onSubmit={agregarProductoInventario}
-                className={`mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 p-6 rounded-2xl shadow-lg ${tarjeta}`}
-              >
-                <div className="md:col-span-2">
-                  <h2 className="text-lg sm:text-xl font-bold">
-                    {productoEditandoId ? "Editar producto" : "Agregar producto"}
-                  </h2>
-                  <p className="mt-1 text-sm opacity-70">
-                    {productoEditandoId
-                      ? "Actualiza el precio, stock o datos del producto seleccionado."
-                      : "Registra productos, servicios, repuestos o equipos para facturación."}
-                  </p>
-                </div>
+    <div className="mt-6 grid gap-6 xl:grid-cols-[420px_1fr]">
+      <div className={`rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
+        <h2 className="text-xl font-bold">Registrar bodega / almacén</h2>
+        <p className="mt-1 text-sm opacity-70">
+          Crea bodegas principales o secundarias para asignarlas a tus productos.
+        </p>
 
-                <input
-                  type="text"
-                  placeholder="Nombre del producto"
-                  value={nombreProducto}
-                  onChange={(e) => setNombreProducto(e.target.value)}
-                  className={inputClass}
-                />
+        <div className="mt-5 space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Nombre de la bodega</label>
+            <input
+              type="text"
+              placeholder="Ejemplo: Bodega central"
+              value={nombreBodega}
+              onChange={(e) => setNombreBodega(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-                <input
-                  type="text"
-                  placeholder="Código del producto"
-                  value={codigoProducto}
-                  onChange={(e) => setCodigoProducto(e.target.value)}
-                  className={inputClass}
-                />
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Tipo de bodega</label>
+            <select
+              value={tipoBodega}
+              onChange={(e) => setTipoBodega(e.target.value)}
+              className={inputClass}
+            >
+              <option value="Principal">Principal</option>
+              <option value="Secundaria">Secundaria</option>
+            </select>
+          </div>
 
-                <input
-                  type="text"
-                  placeholder="Categoría"
-                  value={categoriaProducto}
-                  onChange={(e) => setCategoriaProducto(e.target.value)}
-                  className={inputClass}
-                />
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Ubicación</label>
+            <input
+              type="text"
+              placeholder="Ejemplo: Managua, zona norte"
+              value={ubicacionBodega}
+              onChange={(e) => setUbicacionBodega(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-                <input
-                  type="number"
-                  placeholder="Precio NIO"
-                  value={precioProducto}
-                  onChange={(e) => setPrecioProducto(e.target.value)}
-                  className={inputClass}
-                />
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Responsable</label>
+            <input
+              type="text"
+              placeholder="Nombre del responsable"
+              value={responsableBodega}
+              onChange={(e) => setResponsableBodega(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-                <input
-                  type="number"
-                  placeholder="Stock disponible"
-                  value={stockProducto}
-                  onChange={(e) => setStockProducto(e.target.value)}
-                  className={inputClass}
-                />
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Teléfono</label>
+            <input
+              type="text"
+              placeholder="Ejemplo: 8888-8888"
+              value={telefonoBodega}
+              onChange={(e) => setTelefonoBodega(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-                <input
-                  type="number"
-                  placeholder="Stock mínimo"
-                  value={stockMinimoProducto}
-                  onChange={(e) => setStockMinimoProducto(e.target.value)}
-                  className={inputClass}
-                />
+          <button
+            type="button"
+            onClick={guardarBodega}
+            className="w-full rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700"
+          >
+            Guardar bodega
+          </button>
+        </div>
+      </div>
 
-                <div className="md:col-span-2 flex flex-col sm:flex-row gap-3">
-                  <button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700">
-                    {productoEditandoId ? "Guardar cambios" : "Agregar producto"}
-                  </button>
+      <form
+        onSubmit={agregarProductoInventario}
+        className={`rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}
+      >
+        <h2 className="text-xl font-bold">
+          {productoEditandoId ? "Editar producto" : "Agregar producto"}
+        </h2>
+        <p className="mt-1 text-sm opacity-70">
+          Registra productos, servicios, repuestos o equipos para facturación.
+        </p>
 
-                  {productoEditandoId && (
-                    <button
-                      type="button"
-                      onClick={limpiarFormularioProducto}
-                      className="bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-700"
-                    >
-                      Cancelar edición
-                    </button>
-                  )}
-                </div>
-              </form>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Nombre del producto</label>
+            <input
+              type="text"
+              placeholder="Ejemplo: Compresor industrial"
+              value={nombreProducto}
+              onChange={(e) => setNombreProducto(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-              <div className="mt-8 space-y-4">
-                <h2 className="text-xl sm:text-2xl font-bold">Productos registrados</h2>
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Código del producto</label>
+            <input
+              type="text"
+              placeholder="Ejemplo: PRD-001"
+              value={codigoProducto}
+              onChange={(e) => setCodigoProducto(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-                {productos.length === 0 && (
-                  <p className="opacity-60">No hay productos registrados.</p>
-                )}
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Categoría</label>
+            <input
+              type="text"
+              placeholder="Ejemplo: Electrónica"
+              value={categoriaProducto}
+              onChange={(e) => setCategoriaProducto(e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-                {productos.map((p) => {
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Bodega / Almacén</label>
+            <select
+              value={bodegaProducto}
+              onChange={(e) => setBodegaProducto(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Seleccionar bodega</option>
+              {bodegas.map((bodega) => (
+                <option key={bodega.id} value={bodega.id}>
+                  {bodega.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Precio</label>
+            <input
+              type="number"
+              placeholder="Precio en córdobas"
+              value={precioProducto}
+              onChange={(e) => setPrecioProducto(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Stock actual</label>
+            <input
+              type="number"
+              placeholder="Cantidad disponible"
+              value={stockProducto}
+              onChange={(e) => setStockProducto(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold">Stock mínimo</label>
+            <input
+              type="number"
+              placeholder="Cantidad mínima permitida"
+              value={stockMinimoProducto}
+              onChange={(e) => setStockMinimoProducto(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <button className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white hover:bg-blue-700">
+            {productoEditandoId ? "Guardar cambios" : "Agregar producto"}
+          </button>
+
+          {productoEditandoId && (
+            <button
+              type="button"
+              onClick={limpiarFormularioProducto}
+              className="rounded-xl bg-slate-600 px-6 py-3 font-semibold text-white hover:bg-slate-700"
+            >
+              Cancelar edición
+            </button>
+          )}
+        </div>
+      </form>
+    </div>
+
+    <div className={`mt-8 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
+      <h2 className="text-xl sm:text-2xl font-bold">Productos registrados</h2>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <div>
+          <label className="mb-2 block text-sm font-semibold">Filtrar por código</label>
+          <input
+            type="text"
+            placeholder="Código del producto"
+            value={filtroCodigo}
+            onChange={(e) => setFiltroCodigo(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-semibold">Filtrar por categoría</label>
+          <input
+            type="text"
+            placeholder="Categoría"
+            value={filtroCategoria}
+            onChange={(e) => setFiltroCategoria(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-semibold">Filtrar por bodega</label>
+          <select
+            value={filtroBodega}
+            onChange={(e) => setFiltroBodega(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Todas las bodegas</option>
+            {bodegas.map((bodega) => (
+              <option key={bodega.id} value={bodega.id}>
+                {bodega.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {productos.length === 0 && (
+        <p className="mt-5 opacity-60">No hay productos registrados.</p>
+      )}
+
+      {productos.length > 0 && (
+        <div className="mt-6 overflow-x-auto">
+          <table className="w-full min-w-[950px] text-left text-sm">
+            <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+              <tr>
+                <th className="px-4 py-3">Código</th>
+                <th className="px-4 py-3">Producto</th>
+                <th className="px-4 py-3">Categoría</th>
+                <th className="px-4 py-3">Bodega</th>
+                <th className="px-4 py-3">Precio</th>
+                <th className="px-4 py-3">Stock</th>
+                <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3">Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {productos
+                .filter((p) =>
+                  String(p.codigo || "").toLowerCase().includes(filtroCodigo.toLowerCase())
+                )
+                .filter((p) =>
+                  String(p.categoria || "").toLowerCase().includes(filtroCategoria.toLowerCase())
+                )
+                .filter((p) => !filtroBodega || p.bodega_id === filtroBodega)
+                .map((p) => {
                   const stock = Number(p.stock || 0);
                   const minimo = Number(p.stock_minimo || 5);
                   const bajo = stock <= minimo;
+                  const bodega = bodegas.find((b) => b.id === p.bodega_id);
 
                   return (
-                    <div
+                    <tr
                       key={p.id}
-                      className={`p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-4 sm:justify-between sm:items-center ${tarjeta}`}
+                      className={`border-t ${modoOscuro ? "border-slate-700" : "border-gray-100"}`}
                     >
-                      <div>
+                      <td className="px-4 py-3 font-semibold">
+                        {p.codigo || "Sin código"}
+                      </td>
+
+                      <td className="px-4 py-3">
                         <p className="font-bold">{p.nombre}</p>
-                        <p>Código: {p.codigo || "Sin código"}</p>
-                        <p>Categoría: {p.categoria || "Sin categoría"}</p>
-                        <p>NIO {Number(p.precio || 0).toFixed(2)}</p>
-                        <p>
-                          Stock:{" "}
-                          <span className={bajo ? "text-red-500 font-bold" : ""}>
-                            {stock}
-                          </span>{" "}
-                          / mínimo: {minimo}
-                        </p>
-                        {bajo && (
-                          <p className="text-red-500 font-semibold">
-                            ⚠ Stock bajo: edita este producto para aumentar cantidades.
-                          </p>
-                        )}
-                      </div>
+                      </td>
 
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => editarProductoInventario(p)}
-                          className="bg-yellow-500 text-white px-4 py-2 rounded-xl hover:bg-yellow-600"
-                        >
-                          Editar
-                        </button>
+                      <td className="px-4 py-3">
+                        {p.categoria || "Sin categoría"}
+                      </td>
 
-                        <button
-                          type="button"
-                          onClick={() => eliminarProductoInventario(p.id)}
-                          className="bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600"
+                      <td className="px-4 py-3">
+                        {bodega?.nombre || "Sin bodega"}
+                      </td>
+
+                      <td className="px-4 py-3 font-semibold">
+                        NIO {Number(p.precio || 0).toFixed(2)}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span className={bajo ? "font-bold text-red-500" : "font-semibold"}>
+                          {stock}
+                        </span>{" "}
+                        / mín. {minimo}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${
+                            bajo
+                              ? "bg-red-100 text-red-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
                         >
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
+                          {bajo ? "Stock bajo" : "Normal"}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => editarProductoInventario(p)}
+                            className="rounded-xl bg-yellow-500 px-4 py-2 font-semibold text-white hover:bg-yellow-600"
+                          >
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => eliminarProductoInventario(p.id)}
+                            className="rounded-xl bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-            </section>
-          )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </section>
+)}
 
           {seccion === "reportes" && usuarioActivo.rol === "admin" && (
             <section>

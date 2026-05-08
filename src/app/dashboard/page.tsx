@@ -137,6 +137,17 @@ const [filtroBodega, setFiltroBodega] = useState("");
   const [stockProducto, setStockProducto] = useState("");
   const [stockMinimoProducto, setStockMinimoProducto] = useState("");
   const [productoEditandoId, setProductoEditandoId] = useState<string | null>(null);
+  const [codigoBarrasProducto, setCodigoBarrasProducto] = useState("");
+const [imagenProducto, setImagenProducto] = useState("");
+const [sucursalProducto, setSucursalProducto] = useState("");
+
+const [movimientosInventario, setMovimientosInventario] = useState<any[]>([]);
+const [productoMovimiento, setProductoMovimiento] = useState("");
+const [tipoMovimientoInventario, setTipoMovimientoInventario] = useState("entrada");
+const [cantidadMovimiento, setCantidadMovimiento] = useState("");
+const [bodegaOrigenMovimiento, setBodegaOrigenMovimiento] = useState("");
+const [bodegaDestinoMovimiento, setBodegaDestinoMovimiento] = useState("");
+const [motivoMovimiento, setMotivoMovimiento] = useState("");
 
   useEffect(() => {
     setModoOscuro(localStorage.getItem("modoOscuro") === "true");
@@ -419,6 +430,9 @@ const guardarBodega = async () => {
   setPrecioProducto("");
   setStockProducto("");
   setStockMinimoProducto("");
+  setCodigoBarrasProducto("");
+  setImagenProducto("");
+  setSucursalProducto("");
   setProductoEditandoId(null);
 };
 
@@ -440,6 +454,9 @@ const guardarBodega = async () => {
       stock: Number(stockProducto || 0),
       stock_minimo: Number(stockMinimoProducto || 5),
       activo: true,
+      codigo_barras: codigoBarrasProducto,
+      imagen_url: imagenProducto,
+      sucursal: sucursalProducto,
     };
 
     if (productoEditandoId) {
@@ -3735,6 +3752,61 @@ const totalConIVA = baseConIVA - descuento;
               className={inputClass}
             />
           </div>
+          <div>
+  <label className="mb-2 block text-sm font-semibold">
+    Código de barras
+  </label>
+
+  <div className="flex gap-2">
+    <input
+      type="text"
+      placeholder="Código de barras"
+      value={codigoBarrasProducto}
+      onChange={(e) => setCodigoBarrasProducto(e.target.value)}
+      className={inputClass}
+    />
+
+    <button
+      type="button"
+      onClick={() =>
+        setCodigoBarrasProducto(
+          String(Date.now()).slice(-12)
+        )
+      }
+      className="rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+      Generar
+    </button>
+  </div>
+</div>
+
+<div>
+  <label className="mb-2 block text-sm font-semibold">
+    Imagen URL
+  </label>
+
+  <input
+    type="text"
+    placeholder="https://..."
+    value={imagenProducto}
+    onChange={(e) => setImagenProducto(e.target.value)}
+    className={inputClass}
+  />
+</div>
+
+<div>
+  <label className="mb-2 block text-sm font-semibold">
+    Sucursal
+  </label>
+
+  <input
+    type="text"
+    placeholder="Ejemplo: Sucursal Managua"
+    value={sucursalProducto}
+    onChange={(e) => setSucursalProducto(e.target.value)}
+    className={inputClass}
+  />
+</div>
         </div>
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">

@@ -3803,106 +3803,195 @@ const totalConIVA = baseConIVA - descuento;
       )}
 
       {productos.length > 0 && (
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[950px] text-left text-sm">
-            <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
-              <tr>
-                <th className="px-4 py-3">Código</th>
-                <th className="px-4 py-3">Producto</th>
-                <th className="px-4 py-3">Categoría</th>
-                <th className="px-4 py-3">Bodega</th>
-                <th className="px-4 py-3">Precio</th>
-                <th className="px-4 py-3">Stock</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Acciones</th>
-              </tr>
-            </thead>
+  <>
+    {/* Vista móvil y tablet */}
+    <div className="mt-6 grid gap-4 xl:hidden">
+      {productos
+        .filter((p) =>
+          String(p.codigo || "").toLowerCase().includes(filtroCodigo.toLowerCase())
+        )
+        .filter((p) =>
+          String(p.categoria || "").toLowerCase().includes(filtroCategoria.toLowerCase())
+        )
+        .filter((p) => !filtroBodega || p.bodega_id === filtroBodega)
+        .map((p) => {
+          const stock = Number(p.stock || 0);
+          const minimo = Number(p.stock_minimo || 5);
+          const bajo = stock <= minimo;
+          const bodega = bodegas.find((b) => b.id === p.bodega_id);
 
-            <tbody>
-              {productos
-                .filter((p) =>
-                  String(p.codigo || "").toLowerCase().includes(filtroCodigo.toLowerCase())
-                )
-                .filter((p) =>
-                  String(p.categoria || "").toLowerCase().includes(filtroCategoria.toLowerCase())
-                )
-                .filter((p) => !filtroBodega || p.bodega_id === filtroBodega)
-                .map((p) => {
-                  const stock = Number(p.stock || 0);
-                  const minimo = Number(p.stock_minimo || 5);
-                  const bajo = stock <= minimo;
-                  const bodega = bodegas.find((b) => b.id === p.bodega_id);
+          return (
+            <div
+              key={p.id}
+              className={`rounded-2xl border p-4 shadow-sm ${
+                modoOscuro ? "border-slate-700 bg-slate-800" : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold opacity-60">
+                    {p.codigo || "Sin código"}
+                  </p>
+                  <h3 className="mt-1 text-lg font-bold">{p.nombre}</h3>
+                  <p className="text-sm opacity-70">{p.categoria || "Sin categoría"}</p>
+                </div>
 
-                  return (
-                    <tr
-                      key={p.id}
-                      className={`border-t ${modoOscuro ? "border-slate-700" : "border-gray-100"}`}
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                    bajo
+                      ? "bg-red-100 text-red-700"
+                      : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {bajo ? "Stock bajo" : "Normal"}
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                <div className="rounded-xl bg-slate-100 p-3 text-slate-900">
+                  <p className="text-xs font-semibold text-slate-500">Bodega</p>
+                  <p className="font-bold">{bodega?.nombre || "Sin bodega"}</p>
+                </div>
+
+                <div className="rounded-xl bg-slate-100 p-3 text-slate-900">
+                  <p className="text-xs font-semibold text-slate-500">Precio</p>
+                  <p className="font-bold">NIO {Number(p.precio || 0).toFixed(2)}</p>
+                </div>
+
+                <div className="rounded-xl bg-slate-100 p-3 text-slate-900">
+                  <p className="text-xs font-semibold text-slate-500">Stock</p>
+                  <p className={bajo ? "font-bold text-red-600" : "font-bold"}>
+                    {stock} / mínimo {minimo}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => editarProductoInventario(p)}
+                  className="w-full rounded-xl bg-yellow-500 px-4 py-2 font-semibold text-white hover:bg-yellow-600"
+                >
+                  Editar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => eliminarProductoInventario(p.id)}
+                  className="w-full rounded-xl bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          );
+        })}
+    </div>
+
+    {/* Vista escritorio */}
+    <div className="mt-6 hidden overflow-x-auto xl:block">
+      <table className="w-full table-fixed text-left text-sm">
+        <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+          <tr>
+            <th className="w-[110px] px-4 py-3">Código</th>
+            <th className="w-[220px] px-4 py-3">Producto</th>
+            <th className="w-[170px] px-4 py-3">Categoría</th>
+            <th className="w-[150px] px-4 py-3">Bodega</th>
+            <th className="w-[130px] px-4 py-3 text-right">Precio</th>
+            <th className="w-[120px] px-4 py-3 text-center">Stock</th>
+            <th className="w-[130px] px-4 py-3 text-center">Estado</th>
+            <th className="w-[180px] px-4 py-3 text-center">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {productos
+            .filter((p) =>
+              String(p.codigo || "").toLowerCase().includes(filtroCodigo.toLowerCase())
+            )
+            .filter((p) =>
+              String(p.categoria || "").toLowerCase().includes(filtroCategoria.toLowerCase())
+            )
+            .filter((p) => !filtroBodega || p.bodega_id === filtroBodega)
+            .map((p) => {
+              const stock = Number(p.stock || 0);
+              const minimo = Number(p.stock_minimo || 5);
+              const bajo = stock <= minimo;
+              const bodega = bodegas.find((b) => b.id === p.bodega_id);
+
+              return (
+                <tr
+                  key={p.id}
+                  className={`border-t align-middle ${
+                    modoOscuro ? "border-slate-700" : "border-gray-100"
+                  }`}
+                >
+                  <td className="px-4 py-4 font-semibold break-words">
+                    {p.codigo || "Sin código"}
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <p className="font-bold leading-snug break-words">{p.nombre}</p>
+                  </td>
+
+                  <td className="px-4 py-4 break-words">
+                    {p.categoria || "Sin categoría"}
+                  </td>
+
+                  <td className="px-4 py-4 break-words">
+                    {bodega?.nombre || "Sin bodega"}
+                  </td>
+
+                  <td className="px-4 py-4 text-right font-semibold whitespace-nowrap">
+                    NIO {Number(p.precio || 0).toFixed(2)}
+                  </td>
+
+                  <td className="px-4 py-4 text-center whitespace-nowrap">
+                    <span className={bajo ? "font-bold text-red-500" : "font-semibold"}>
+                      {stock}
+                    </span>{" "}
+                    / mín. {minimo}
+                  </td>
+
+                  <td className="px-4 py-4 text-center">
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                        bajo
+                          ? "bg-red-100 text-red-700"
+                          : "bg-green-100 text-green-700"
+                      }`}
                     >
-                      <td className="px-4 py-3 font-semibold">
-                        {p.codigo || "Sin código"}
-                      </td>
+                      {bajo ? "Stock bajo" : "Normal"}
+                    </span>
+                  </td>
 
-                      <td className="px-4 py-3">
-                        <p className="font-bold">{p.nombre}</p>
-                      </td>
+                  <td className="px-4 py-4">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => editarProductoInventario(p)}
+                        className="rounded-xl bg-yellow-500 px-3 py-2 text-xs font-semibold text-white hover:bg-yellow-600"
+                      >
+                        Editar
+                      </button>
 
-                      <td className="px-4 py-3">
-                        {p.categoria || "Sin categoría"}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        {bodega?.nombre || "Sin bodega"}
-                      </td>
-
-                      <td className="px-4 py-3 font-semibold">
-                        NIO {Number(p.precio || 0).toFixed(2)}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <span className={bajo ? "font-bold text-red-500" : "font-semibold"}>
-                          {stock}
-                        </span>{" "}
-                        / mín. {minimo}
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold ${
-                            bajo
-                              ? "bg-red-100 text-red-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          {bajo ? "Stock bajo" : "Normal"}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => editarProductoInventario(p)}
-                            className="rounded-xl bg-yellow-500 px-4 py-2 font-semibold text-white hover:bg-yellow-600"
-                          >
-                            Editar
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => eliminarProductoInventario(p.id)}
-                            className="rounded-xl bg-red-500 px-4 py-2 font-semibold text-white hover:bg-red-600"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                      <button
+                        type="button"
+                        onClick={() => eliminarProductoInventario(p.id)}
+                        className="rounded-xl bg-red-500 px-3 py-2 text-xs font-semibold text-white hover:bg-red-600"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+    </div>
+  </>
+)}
     </div>
   </section>
 )}

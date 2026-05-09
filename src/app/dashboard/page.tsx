@@ -93,6 +93,7 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
   const [proyectoFactura, setProyectoFactura] = useState("");
   const [descuentoFactura, setDescuentoFactura] = useState("");
   const [productoSeleccionado, setProductoSeleccionado] = useState("");
+  const [mensajeScanner, setMensajeScanner] = useState("");
   const [itemsFactura, setItemsFactura] = useState<any[]>([]);
 
   const [facturas, setFacturas] = useState<any[]>([]);
@@ -3495,13 +3496,18 @@ const totalConIVA = baseConIVA - descuento;
                       <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">📦</span>
                       <h2 className="text-lg font-bold">2. Producto</h2>
                     </div>
+                    {mensajeScanner && (
+  <div className="mb-3 rounded-xl bg-green-100 px-4 py-3 text-sm font-semibold text-green-700">
+    ✅ {mensajeScanner}
+  </div>
+)}
 
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                       <input
   type="text"
   placeholder="Escanear o escribir código de barras"
   className={inputClass}
-  onKeyDown={(e) => {
+  onKeyDown={async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
 
@@ -3512,6 +3518,29 @@ const totalConIVA = baseConIVA - descuento;
           String(p.codigo_barras || "") === codigo ||
           String(p.codigo || "") === codigo
       );
+      const AudioCtx =
+  window.AudioContext || (window as any).webkitAudioContext;
+
+const audioContext = new AudioCtx();
+await audioContext.resume();
+
+const oscillator = audioContext.createOscillator();
+const gainNode = audioContext.createGain();
+
+oscillator.connect(gainNode);
+gainNode.connect(audioContext.destination);
+
+oscillator.frequency.value = 1000;
+oscillator.type = "square";
+
+gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+gainNode.gain.exponentialRampToValueAtTime(
+  0.001,
+  audioContext.currentTime + 0.2
+);
+
+oscillator.start(audioContext.currentTime);
+oscillator.stop(audioContext.currentTime + 0.2);
 
       if (!productoEncontrado) {
         alert("Producto no encontrado con ese código");
@@ -3519,7 +3548,35 @@ const totalConIVA = baseConIVA - descuento;
       }
 
       setProductoSeleccionado(productoEncontrado.id);
-      setItemsFactura((actuales) => [...actuales, productoEncontrado]);
+      setItemsFactura((actuales) => {
+  const existente = actuales.find(
+    (item) => item.id === productoEncontrado.id
+  );
+  setMensajeScanner(`Producto agregado: ${productoEncontrado.nombre}`);
+
+setTimeout(() => {
+  setMensajeScanner("");
+}, 2000);
+
+  if (existente) {
+    return actuales.map((item) =>
+      item.id === productoEncontrado.id
+        ? {
+            ...item,
+            cantidad: (item.cantidad || 1) + 1,
+          }
+        : item
+    );
+  }
+
+  return [
+    ...actuales,
+    {
+      ...productoEncontrado,
+      cantidad: 1,
+    },
+  ];
+});
       e.currentTarget.value = "";
     }
   }}

@@ -148,6 +148,8 @@ const [cantidadMovimiento, setCantidadMovimiento] = useState("");
 const [bodegaOrigenMovimiento, setBodegaOrigenMovimiento] = useState("");
 const [bodegaDestinoMovimiento, setBodegaDestinoMovimiento] = useState("");
 const [motivoMovimiento, setMotivoMovimiento] = useState("");
+const [productoSeleccionadoMovimiento, setProductoSeleccionadoMovimiento] =
+  useState<any>(null);
 
   useEffect(() => {
     setModoOscuro(localStorage.getItem("modoOscuro") === "true");
@@ -194,6 +196,15 @@ const [motivoMovimiento, setMotivoMovimiento] = useState("");
     .order("created_at", { ascending: false });
 
   setBodegas(data || []);
+};
+const cargarMovimientosInventario = async (rucEmpresa: string) => {
+  const { data } = await supabase
+    .from("movimientos_inventario")
+    .select("*")
+    .eq("empresa_ruc", rucEmpresa)
+    .order("fecha", { ascending: false });
+
+  setMovimientosInventario(data || []);
 };
 const guardarBodega = async () => {
   if (!nombreBodega || !empresaActiva) {
@@ -329,6 +340,8 @@ const guardarBodega = async () => {
     await cargarUsuarios(ruc);
     await cargarClientes(ruc);
     await cargarProductos(ruc);
+    await cargarBodegas(ruc);
+    await cargarMovimientosInventario(ruc);
     await cargarFacturas(ruc);
     await cargarEmpleadosPlanilla(ruc);
     await cargarPagosPlanilla(ruc);
@@ -501,6 +514,105 @@ const guardarBodega = async () => {
     setStockMinimoProducto(String(producto.stock_minimo || 5));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const registrarMovimientoInventario = async (e: any) => {
+  e.preventDefault();
+
+  if (!empresaActiva || !usuarioActivo) return;
+
+  if (!productoMovimiento || !cantidadMovimiento) {
+    alert("Selecciona un producto y escribe la cantidad");
+    return;
+  }
+
+  const producto = productos.find((p) => p.id === productoMovimiento);
+
+  if (!producto) {
+    alert("Producto no encontrado");
+    return;
+  }
+
+  const cantidad = Number(cantidadMovimiento);
+  const stockActual = Number(producto.stock || 0);
+
+  let stockNuevo = stockActual;
+
+  if (tipoMovimientoInventario === "entrada") {
+    stockNuevo = stockActual + cantidad;
+  }
+
+  if (tipoMovimientoInventario === "salida") {
+    if (cantidad > stockActual) {
+      alert("No hay suficiente stock para realizar la salida");
+      return;
+    }
+
+    stockNuevo = stockActual - cantidad;
+  }
+
+  const { error: errorProducto } = await supabase
+    .from("productos")
+    .update({
+      stock: stockNuevo,
+      bodega_id: bodegaDestinoMovimiento || producto.bodega_id || null,
+    })
+    .eq("id", producto.id);
+
+  if (errorProducto) {
+    console.error(errorProducto);
+    alert("Error actualizando stock del producto");
+    return;
+  }
+
+  const { error: errorMovimiento } = await supabase
+    .from("movimientos_inventario")
+    .insert([
+      {
+        empresa_ruc: empresaActiva.ruc,
+        producto_id: producto.id,
+        producto_nombre: producto.nombre,
+        tipo: tipoMovimientoInventario,
+        cantidad,
+        bodega_origen_id: bodegaOrigenMovimiento || producto.bodega_id || null,
+        bodega_destino_id: bodegaDestinoMovimiento || producto.bodega_id || null,
+        motivo: motivoMovimiento,
+        usuario_nombre: usuarioActivo.nombre,
+      },
+    ]);
+
+  if (errorMovimiento) {
+    console.error(errorMovimiento);
+    alert("El stock se actualizó, pero hubo error guardando el movimiento");
+    return;
+  }
+
+  await supabase.from("kardex_inventario").insert([
+    {
+      empresa_ruc: empresaActiva.ruc,
+      producto_id: producto.id,
+      producto_nombre: producto.nombre,
+      tipo_movimiento: tipoMovimientoInventario,
+      cantidad,
+      stock_anterior: stockActual,
+      stock_nuevo: stockNuevo,
+      bodega_id: bodegaDestinoMovimiento || producto.bodega_id || null,
+      detalle: motivoMovimiento,
+      usuario_nombre: usuarioActivo.nombre,
+    },
+  ]);
+
+  await cargarProductos(empresaActiva.ruc);
+  await cargarMovimientosInventario(empresaActiva.ruc);
+
+  setProductoMovimiento("");
+  setTipoMovimientoInventario("entrada");
+  setCantidadMovimiento("");
+  setBodegaOrigenMovimiento("");
+  setBodegaDestinoMovimiento("");
+  setMotivoMovimiento("");
+  setProductoSeleccionadoMovimiento(null);
+
+  alert("Movimiento registrado correctamente");
+};
 
   const eliminarProductoInventario = async (id?: string) => {
     if (!id || !empresaActiva) return;
@@ -3826,6 +3938,122 @@ const totalConIVA = baseConIVA - descuento;
         </div>
       </form>
     </div>
+    <div className={`mt-8 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
+  <h2 className="text-xl sm:text-2xl font-bold">Movimientos de inventario</h2>
+  <p className="mt-1 text-sm opacity-70">
+    Registra entradas y salidas de productos. El stock se actualizará automáticamente.
+  </p>
+
+  <form
+    onSubmit={registrarMovimientoInventario}
+    className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+  >
+    <div>
+      <label className="mb-2 block text-sm font-semibold">Producto</label>
+      <select
+        value={productoMovimiento}
+        onChange={(e) => {
+          setProductoMovimiento(e.target.value);
+          const producto = productos.find((p) => p.id === e.target.value);
+          setProductoSeleccionadoMovimiento(producto || null);
+          setBodegaOrigenMovimiento(producto?.bodega_id || "");
+          setBodegaDestinoMovimiento(producto?.bodega_id || "");
+        }}
+        className={inputClass}
+      >
+        <option value="">Seleccionar producto</option>
+        {productos.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.nombre} | Stock: {Number(p.stock || 0)}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">Tipo de movimiento</label>
+      <select
+        value={tipoMovimientoInventario}
+        onChange={(e) => setTipoMovimientoInventario(e.target.value)}
+        className={inputClass}
+      >
+        <option value="entrada">Entrada</option>
+        <option value="salida">Salida</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">Cantidad</label>
+      <input
+        type="number"
+        min="1"
+        placeholder="Cantidad"
+        value={cantidadMovimiento}
+        onChange={(e) => setCantidadMovimiento(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">Bodega origen</label>
+      <select
+        value={bodegaOrigenMovimiento}
+        onChange={(e) => setBodegaOrigenMovimiento(e.target.value)}
+        className={inputClass}
+      >
+        <option value="">Sin bodega origen</option>
+        {bodegas.map((bodega) => (
+          <option key={bodega.id} value={bodega.id}>
+            {bodega.nombre}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">Bodega destino</label>
+      <select
+        value={bodegaDestinoMovimiento}
+        onChange={(e) => setBodegaDestinoMovimiento(e.target.value)}
+        className={inputClass}
+      >
+        <option value="">Sin bodega destino</option>
+        {bodegas.map((bodega) => (
+          <option key={bodega.id} value={bodega.id}>
+            {bodega.nombre}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">Motivo</label>
+      <input
+        type="text"
+        placeholder="Ejemplo: Compra, ajuste, daño, devolución"
+        value={motivoMovimiento}
+        onChange={(e) => setMotivoMovimiento(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+    {productoSeleccionadoMovimiento && (
+      <div className={`md:col-span-2 xl:col-span-3 rounded-2xl border p-4 ${
+        modoOscuro ? "border-blue-500/30 bg-blue-500/10" : "border-blue-100 bg-blue-50"
+      }`}>
+        <p className="font-bold">Producto seleccionado</p>
+        <p className="text-sm opacity-80">
+          {productoSeleccionadoMovimiento.nombre} | Stock actual:{" "}
+          {Number(productoSeleccionadoMovimiento.stock || 0)}
+        </p>
+      </div>
+    )}
+
+    <button className="md:col-span-2 xl:col-span-3 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700">
+      Registrar movimiento
+    </button>
+  </form>
+</div>
 
     <div className={`mt-8 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
       <h2 className="text-xl sm:text-2xl font-bold">Productos registrados</h2>

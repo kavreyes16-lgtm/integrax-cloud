@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/lib/supabase";
+import Barcode from "react-barcode";
 import {
   BarChart,
   Bar,
@@ -525,6 +526,63 @@ const guardarBodega = async () => {
     setStockMinimoProducto(String(producto.stock_minimo || 5));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const generarCodigoBarras = (producto: any) => {
+  const codigo = producto.codigo || producto.id;
+
+  const ventana = window.open("", "_blank");
+
+  if (!ventana) return;
+
+  ventana.document.write(`
+    <html>
+      <head>
+        <title>Código de barras</title>
+        <style>
+          body {
+            font-family: Arial;
+            text-align: center;
+            padding: 40px;
+          }
+
+          h1 {
+            margin-bottom: 10px;
+          }
+
+          img {
+            margin-top: 20px;
+            width: 300px;
+          }
+
+          button {
+            margin-top: 30px;
+            padding: 10px 20px;
+            border: none;
+            background: black;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+          }
+        </style>
+      </head>
+
+      <body>
+        <h1>${producto.nombre}</h1>
+
+        <img
+          src="https://barcodeapi.org/api/128/${codigo}"
+        />
+
+        <p>${codigo}</p>
+
+        <button onclick="window.print()">
+          Imprimir
+        </button>
+      </body>
+    </html>
+  `);
+
+  ventana.document.close();
+};
   const registrarMovimientoInventario = async (e: any) => {
   e.preventDefault();
 
@@ -4275,6 +4333,13 @@ const totalConIVA = baseConIVA - descuento;
                 >
                   Editar
                 </button>
+                <button
+  type="button"
+  onClick={() => generarCodigoBarras(p)}
+  className="w-full rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+>
+  Código
+</button>
 
                 <button
                   type="button"
@@ -4375,6 +4440,13 @@ const totalConIVA = baseConIVA - descuento;
                       >
                         Editar
                       </button>
+                      <button
+  type="button"
+  onClick={() => generarCodigoBarras(p)}
+  className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+>
+  Código
+</button>
 
                       <button
                         type="button"

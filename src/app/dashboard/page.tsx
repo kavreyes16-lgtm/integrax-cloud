@@ -142,6 +142,7 @@ const [imagenProducto, setImagenProducto] = useState("");
 const [sucursalProducto, setSucursalProducto] = useState("");
 
 const [movimientosInventario, setMovimientosInventario] = useState<any[]>([]);
+const [kardexInventario, setKardexInventario] = useState<any[]>([]);
 const [productoMovimiento, setProductoMovimiento] = useState("");
 const [tipoMovimientoInventario, setTipoMovimientoInventario] = useState("entrada");
 const [cantidadMovimiento, setCantidadMovimiento] = useState("");
@@ -205,6 +206,15 @@ const cargarMovimientosInventario = async (rucEmpresa: string) => {
     .order("fecha", { ascending: false });
 
   setMovimientosInventario(data || []);
+};
+const cargarKardexInventario = async (rucEmpresa: string) => {
+  const { data } = await supabase
+    .from("kardex_inventario")
+    .select("*")
+    .eq("empresa_ruc", rucEmpresa)
+    .order("fecha", { ascending: false });
+
+  setKardexInventario(data || []);
 };
 const guardarBodega = async () => {
   if (!nombreBodega || !empresaActiva) {
@@ -342,6 +352,7 @@ const guardarBodega = async () => {
     await cargarProductos(ruc);
     await cargarBodegas(ruc);
     await cargarMovimientosInventario(ruc);
+    await cargarKardexInventario(ruc);
     await cargarFacturas(ruc);
     await cargarEmpleadosPlanilla(ruc);
     await cargarPagosPlanilla(ruc);
@@ -602,6 +613,7 @@ const guardarBodega = async () => {
 
   await cargarProductos(empresaActiva.ruc);
   await cargarMovimientosInventario(empresaActiva.ruc);
+  await cargarKardexInventario(empresaActiva.ruc);
 
   setProductoMovimiento("");
   setTipoMovimientoInventario("entrada");
@@ -3938,6 +3950,95 @@ const totalConIVA = baseConIVA - descuento;
         </div>
       </form>
     </div>
+    <div className={`mt-8 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
+  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h2 className="text-xl sm:text-2xl font-bold">
+        Kardex de inventario
+      </h2>
+
+      <p className="text-sm opacity-70">
+        Historial completo de entradas y salidas de productos.
+      </p>
+    </div>
+  </div>
+
+  <div className="mt-6 overflow-x-auto">
+    <table className="min-w-full text-sm">
+      <thead>
+        <tr className={`border-b ${modoOscuro ? "border-white/10" : "border-black/10"}`}>
+          <th className="px-4 py-3 text-left">Fecha</th>
+          <th className="px-4 py-3 text-left">Producto</th>
+          <th className="px-4 py-3 text-left">Movimiento</th>
+          <th className="px-4 py-3 text-left">Cantidad</th>
+          <th className="px-4 py-3 text-left">Stock anterior</th>
+          <th className="px-4 py-3 text-left">Stock nuevo</th>
+          <th className="px-4 py-3 text-left">Usuario</th>
+          <th className="px-4 py-3 text-left">Detalle</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {kardexInventario.map((item) => (
+          <tr
+            key={item.id}
+            className={`border-b ${
+              modoOscuro
+                ? "border-white/5 hover:bg-white/5"
+                : "border-black/5 hover:bg-black/5"
+            }`}
+          >
+            <td className="px-4 py-3 whitespace-nowrap">
+              {new Date(item.fecha).toLocaleString("es-NI")}
+            </td>
+
+            <td className="px-4 py-3 font-semibold">
+              {item.producto_nombre}
+            </td>
+
+            <td className="px-4 py-3">
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  item.tipo_movimiento === "entrada"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {item.tipo_movimiento}
+              </span>
+            </td>
+
+            <td className="px-4 py-3">
+              {Number(item.cantidad || 0)}
+            </td>
+
+            <td className="px-4 py-3">
+              {Number(item.stock_anterior || 0)}
+            </td>
+
+            <td className="px-4 py-3 font-bold">
+              {Number(item.stock_nuevo || 0)}
+            </td>
+
+            <td className="px-4 py-3">
+              {item.usuario_nombre || "-"}
+            </td>
+
+            <td className="px-4 py-3">
+              {item.detalle || "-"}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    {kardexInventario.length === 0 && (
+      <div className="py-10 text-center opacity-60">
+        No hay movimientos registrados todavía.
+      </div>
+    )}
+  </div>
+</div>
     <div className={`mt-8 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
   <h2 className="text-xl sm:text-2xl font-bold">Movimientos de inventario</h2>
   <p className="mt-1 text-sm opacity-70">

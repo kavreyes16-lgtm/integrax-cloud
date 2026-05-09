@@ -224,10 +224,10 @@ const guardarBodega = async () => {
   ]);
 
   if (error) {
-    console.error(error);
-    alert("Error guardando bodega");
-    return;
-  }
+  console.error("ERROR BODEGA:", error);
+  alert("Error guardando bodega: " + error.message);
+  return;
+}
 
   setNombreBodega("");
   setTipoBodega("Principal");

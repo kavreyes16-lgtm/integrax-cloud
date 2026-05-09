@@ -3497,6 +3497,33 @@ const totalConIVA = baseConIVA - descuento;
                     </div>
 
                     <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                      <input
+  type="text"
+  placeholder="Escanear o escribir código de barras"
+  className={inputClass}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      const codigo = e.currentTarget.value.trim();
+
+      const productoEncontrado = productos.find(
+        (p) =>
+          String(p.codigo_barras || "") === codigo ||
+          String(p.codigo || "") === codigo
+      );
+
+      if (!productoEncontrado) {
+        alert("Producto no encontrado con ese código");
+        return;
+      }
+
+      setProductoSeleccionado(productoEncontrado.id);
+      setItemsFactura((actuales) => [...actuales, productoEncontrado]);
+      e.currentTarget.value = "";
+    }
+  }}
+/>
                       <select
                         value={productoSeleccionado}
                         onChange={(e) => setProductoSeleccionado(e.target.value)}

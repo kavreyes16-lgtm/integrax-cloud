@@ -580,10 +580,10 @@ const guardarBodega = async () => {
     ]);
 
   if (errorMovimiento) {
-    console.error(errorMovimiento);
-    alert("El stock se actualizó, pero hubo error guardando el movimiento");
-    return;
-  }
+  console.error("ERROR MOVIMIENTO:", errorMovimiento);
+  alert("Error guardando movimiento: " + errorMovimiento.message);
+  return;
+}
 
   await supabase.from("kardex_inventario").insert([
     {

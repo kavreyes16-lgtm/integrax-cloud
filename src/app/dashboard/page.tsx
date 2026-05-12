@@ -2390,6 +2390,114 @@ const totalConIVA = baseConIVA - descuento;
     doc.save(`pago-planilla-${pago.empleado_nombre}.pdf`);
   };
 
+  const generarTicketPOS = async (factura: any) => {
+  const { data: items } = await supabase
+    .from("factura_items")
+    .select("*")
+    .eq("factura_id", factura.id);
+
+  const ventana = window.open("", "_blank");
+  if (!ventana) return;
+
+  const filas = (items || [])
+    .map(
+      (item: any) => `
+        <tr>
+          <td>${item.nombre_producto || ""}</td>
+          <td style="text-align:center;">${item.cantidad || 1}</td>
+          <td style="text-align:right;">${Number(item.precio || 0).toFixed(2)}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  ventana.document.write(`
+    <html>
+      <head>
+        <title>Ticket POS</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            width: 280px;
+            margin: 0 auto;
+            padding: 12px;
+            color: #111;
+          }
+          h2, p {
+            text-align: center;
+            margin: 4px 0;
+          }
+          .line {
+            border-top: 1px dashed #111;
+            margin: 10px 0;
+          }
+          table {
+            width: 100%;
+            font-size: 12px;
+            border-collapse: collapse;
+          }
+          td {
+            padding: 3px 0;
+          }
+          .total {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: right;
+          }
+          button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 10px;
+            border: 0;
+            border-radius: 8px;
+            background: #111;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+          }
+          @media print {
+            button { display: none; }
+          }
+        </style>
+      </head>
+
+      <body>
+        <h2>${factura.empresa_nombre || empresaActiva?.nombre || "INTEGRAX Cloud"}</h2>
+        <p>RUC: ${factura.empresa_ruc || empresaActiva?.ruc || ""}</p>
+        <p>${factura.numero_factura || "Factura"}</p>
+        <p>${factura.fecha || ""} ${factura.hora || ""}</p>
+
+        <div class="line"></div>
+
+        <p><strong>Cliente:</strong> ${factura.cliente || "Consumidor final"}</p>
+
+        <div class="line"></div>
+
+        <table>
+          <tbody>
+            ${filas}
+          </tbody>
+        </table>
+
+        <div class="line"></div>
+
+        <p>Subtotal: NIO ${Number(factura.subtotal || 0).toFixed(2)}</p>
+        <p>IVA 15%: NIO ${Number(factura.iva || 0).toFixed(2)}</p>
+        <p>Descuento: NIO ${Number(factura.descuento || 0).toFixed(2)}</p>
+        <p class="total">TOTAL: NIO ${Number(factura.total || 0).toFixed(2)}</p>
+
+        <div class="line"></div>
+
+        <p>Gracias por su compra</p>
+        <p>INTEGRAX Cloud</p>
+
+        <button onclick="window.print()">Imprimir ticket</button>
+      </body>
+    </html>
+  `);
+
+  ventana.document.close();
+};
   const generarPDF = async (factura: any) => {
     const { data: items } = await supabase
       .from("factura_items")
@@ -2636,6 +2744,61 @@ const totalConIVA = baseConIVA - descuento;
     doc.setTextColor(gris[0], gris[1], gris[2]);
     doc.text("Sistema empresarial desarrollado por INTEGRAX Cloud.", 20, 287);
 
+    const canvas = document.getElementById(`barcode-${factura.id}`) as HTMLCanvasElement;
+
+if (canvas) {
+  const barcodeImg = canvas.toDataURL("image/png");
+
+  doc.setFontSize(10);
+  doc.text("Código de barras:", 14, 250);
+
+  doc.addImage(barcodeImg, "PNG", 14, 255, 80, 20);
+}
+const tempDiv = document.createElement("div");
+tempDiv.innerHTML = `
+  <svg id="barcode-temp"></svg>
+`;
+
+document.body.appendChild(tempDiv);
+
+const JsBarcode = (await import("jsbarcode")).default;
+
+JsBarcode("#barcode-temp", factura.numero_factura || numeroFactura, {
+  format: "CODE128",
+  displayValue: true,
+  fontSize: 14,
+});
+
+const svg = document.getElementById("barcode-temp");
+
+if (svg) {
+  const svgData = new XMLSerializer().serializeToString(svg);
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const img = new Image();
+
+  img.src =
+    "data:image/svg+xml;base64," +
+    btoa(unescape(encodeURIComponent(svgData)));
+
+  await new Promise((resolve) => {
+    img.onload = resolve;
+  });
+
+  canvas.width = img.width;
+  canvas.height = img.height;
+
+  ctx?.drawImage(img, 0, 0);
+
+  const png = canvas.toDataURL("image/png");
+
+  doc.text("Código de barras:", 14, 245);
+  doc.addImage(png, "PNG", 14, 250, 100, 25);
+}
+
+document.body.removeChild(tempDiv);
     doc.save(`${numeroFactura}-${factura.cliente}.pdf`);
   };
 
@@ -3814,6 +3977,13 @@ setTimeout(() => {
                                 >
                                   Ver/PDF
                                 </button>
+                                <button
+  type="button"
+  onClick={() => generarTicketPOS(f)}
+  className="rounded-xl bg-black px-3 py-2 font-semibold text-white hover:bg-neutral-800"
+>
+  Ticket POS
+</button>
 
                                 {usuarioActivo.rol === "admin" && f.estado !== "erronea" && (
                                   <button

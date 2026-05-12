@@ -3970,7 +3970,7 @@ setTimeout(() => {
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => generarPDF(f)}
                                   className="rounded-xl bg-blue-50 px-3 py-2 font-semibold text-blue-600 hover:bg-blue-100"

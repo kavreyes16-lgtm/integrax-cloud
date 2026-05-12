@@ -2403,9 +2403,9 @@ const totalConIVA = baseConIVA - descuento;
     .map(
       (item: any) => `
         <tr>
-          <td>${item.nombre_producto || ""}</td>
-          <td style="text-align:center;">${item.cantidad || 1}</td>
-          <td style="text-align:right;">${Number(item.precio || 0).toFixed(2)}</td>
+          <td class="producto">${item.nombre_producto || ""}</td>
+          <td class="cantidad">${item.cantidad || 1}</td>
+          <td class="precio">NIO ${Number(item.precio || 0).toFixed(2)}</td>
         </tr>
       `
     )
@@ -2416,88 +2416,171 @@ const totalConIVA = baseConIVA - descuento;
       <head>
         <title>Ticket POS</title>
         <style>
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+
           body {
             font-family: Arial, sans-serif;
-            width: 280px;
-            margin: 0 auto;
-            padding: 12px;
+            width: 80mm;
+            margin: 0;
+            padding: 10px;
             color: #111;
-          }
-          h2, p {
-            text-align: center;
-            margin: 4px 0;
-          }
-          .line {
-            border-top: 1px dashed #111;
-            margin: 10px 0;
-          }
-          table {
-            width: 100%;
             font-size: 12px;
-            border-collapse: collapse;
           }
-          td {
-            padding: 3px 0;
+
+          .ticket {
+            width: 100%;
           }
-          .total {
+
+          .center {
+            text-align: center;
+          }
+
+          .title {
             font-size: 16px;
             font-weight: bold;
+            margin-bottom: 4px;
+          }
+
+          .subtitle {
+            font-size: 11px;
+            margin: 2px 0;
+          }
+
+          .line {
+            border-top: 1px dashed #111;
+            margin: 8px 0;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+
+          th {
+            text-align: left;
+            padding-bottom: 4px;
+          }
+
+          td {
+            padding: 3px 0;
+            vertical-align: top;
+          }
+
+          .producto {
+            width: 50%;
+          }
+
+          .cantidad {
+            width: 15%;
+            text-align: center;
+          }
+
+          .precio {
+            width: 35%;
             text-align: right;
           }
+
+          .totales p {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+          }
+
+          .total {
+            font-size: 15px;
+            font-weight: bold;
+          }
+
+          .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 11px;
+          }
+
           button {
             width: 100%;
             margin-top: 12px;
             padding: 10px;
-            border: 0;
+            border: none;
             border-radius: 8px;
             background: #111;
             color: white;
             font-weight: bold;
             cursor: pointer;
           }
+
           @media print {
-            button { display: none; }
+            button {
+              display: none;
+            }
+
+            body {
+              padding: 0;
+            }
           }
         </style>
       </head>
 
       <body>
-        <h2>${factura.empresa_nombre || empresaActiva?.nombre || "INTEGRAX Cloud"}</h2>
-        <p>RUC: ${factura.empresa_ruc || empresaActiva?.ruc || ""}</p>
-        <p>${factura.numero_factura || "Factura"}</p>
-        <p>${factura.fecha || ""} ${factura.hora || ""}</p>
+        <div class="ticket">
+          <div class="center">
+            <div class="title">${factura.empresa_nombre || empresaActiva?.nombre || "INTEGRAX Cloud"}</div>
+            <div class="subtitle">RUC: ${factura.empresa_ruc || empresaActiva?.ruc || ""}</div>
+            <div class="subtitle">Ticket POS</div>
+            <div class="subtitle">${factura.numero_factura || "Factura"}</div>
+            <div class="subtitle">${factura.fecha || ""} ${factura.hora || ""}</div>
+          </div>
 
-        <div class="line"></div>
+          <div class="line"></div>
 
-        <p><strong>Cliente:</strong> ${factura.cliente || "Consumidor final"}</p>
+          <p><strong>Cliente:</strong> ${factura.cliente || "Consumidor final"}</p>
+          <p><strong>Pago:</strong> ${factura.tipo_pago || "No especificado"}</p>
+          <p><strong>Estado:</strong> ${factura.estado_pago || "No especificado"}</p>
 
-        <div class="line"></div>
+          <div class="line"></div>
 
-        <table>
-          <tbody>
-            ${filas}
-          </tbody>
-        </table>
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th style="text-align:center;">Cant.</th>
+                <th style="text-align:right;">Precio</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filas}
+            </tbody>
+          </table>
 
-        <div class="line"></div>
+          <div class="line"></div>
 
-        <p>Subtotal: NIO ${Number(factura.subtotal || 0).toFixed(2)}</p>
-        <p>IVA 15%: NIO ${Number(factura.iva || 0).toFixed(2)}</p>
-        <p>Descuento: NIO ${Number(factura.descuento || 0).toFixed(2)}</p>
-        <p class="total">TOTAL: NIO ${Number(factura.total || 0).toFixed(2)}</p>
+          <div class="totales">
+            <p><span>Subtotal</span><span>NIO ${Number(factura.subtotal || 0).toFixed(2)}</span></p>
+            <p><span>IVA 15%</span><span>NIO ${Number(factura.iva || 0).toFixed(2)}</span></p>
+            <p><span>Descuento</span><span>NIO ${Number(factura.descuento || 0).toFixed(2)}</span></p>
+            <p class="total"><span>TOTAL</span><span>NIO ${Number(factura.total || 0).toFixed(2)}</span></p>
+          </div>
 
-        <div class="line"></div>
+          <div class="line"></div>
 
-        <p>Gracias por su compra</p>
-        <p>INTEGRAX Cloud</p>
+          <div class="footer">
+            <p>Gracias por su compra</p>
+            <p>INTEGRAX Cloud</p>
+          </div>
 
-        <button onclick="window.print()">Imprimir ticket</button>
+          <button onclick="window.print()">Imprimir ticket</button>
+        </div>
       </body>
     </html>
   `);
 
   ventana.document.close();
 };
+
   const generarPDF = async (factura: any) => {
     const { data: items } = await supabase
       .from("factura_items")

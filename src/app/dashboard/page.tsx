@@ -4117,6 +4117,168 @@ setTimeout(() => {
             </section>
           )}
 
+          {seccion === "caja" && (
+  <section className="space-y-6">
+
+    <div className="rounded-3xl border border-white/10 bg-white p-6 shadow-xl dark:bg-slate-900">
+      <h1 className="text-2xl sm:text-3xl font-bold">
+        Caja
+      </h1>
+
+      <p className="mt-2 opacity-70">
+        Apertura y cierre de caja diario.
+      </p>
+    </div>
+
+    {!cajaAbierta && (
+      <div className="rounded-3xl border border-white/10 bg-white p-6 shadow-xl dark:bg-slate-900">
+        <h2 className="text-xl font-bold">
+          Aperturar caja
+        </h2>
+
+        <div className="mt-4">
+          <input
+            type="number"
+            placeholder="Monto inicial"
+            value={montoInicialCaja}
+            onChange={(e) => setMontoInicialCaja(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <button
+          className="mt-4 rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white"
+          onClick={async () => {
+            if (!empresaActiva) return;
+
+            const nuevaCaja = {
+              empresa_ruc: empresaActiva.ruc,
+              usuario_nombre: usuarioActivo?.nombre || "Administrador",
+              hora_apertura: new Date().toLocaleTimeString(),
+              monto_inicial: Number(montoInicialCaja || 0),
+              estado: "abierta",
+            };
+
+            await supabase.from("cajas").insert([nuevaCaja]);
+
+            setMontoInicialCaja("");
+
+            await cargarCajas(empresaActiva.ruc);
+
+            alert("Caja aperturada correctamente");
+          }}
+        >
+          Abrir caja
+        </button>
+      </div>
+    )}
+
+    {cajaAbierta && (
+      <div className="rounded-3xl border border-green-500/30 bg-white p-6 shadow-xl dark:bg-slate-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+          <div>
+            <h2 className="text-xl font-bold text-green-600">
+              Caja abierta
+            </h2>
+
+            <p className="mt-1 opacity-70">
+              Aperturada por {cajaAbierta.usuario_nombre}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-green-100 px-4 py-2 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+            Activa
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+
+          <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
+            <p className="text-sm opacity-70">
+              Monto inicial
+            </p>
+
+            <h3 className="mt-2 text-2xl font-bold">
+              NIO {Number(cajaAbierta.monto_inicial || 0).toFixed(2)}
+            </h3>
+          </div>
+
+          <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
+            <p className="text-sm opacity-70">
+              Hora apertura
+            </p>
+
+            <h3 className="mt-2 text-2xl font-bold">
+              {cajaAbierta.hora_apertura}
+            </h3>
+          </div>
+
+          <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
+            <p className="text-sm opacity-70">
+              Estado
+            </p>
+
+            <h3 className="mt-2 text-2xl font-bold text-green-600">
+              ABIERTA
+            </h3>
+          </div>
+
+        </div>
+
+        <div className="mt-6">
+          <input
+            type="number"
+            placeholder="Efectivo contado al cierre"
+            value={efectivoContadoCaja}
+            onChange={(e) => setEfectivoContadoCaja(e.target.value)}
+            className={inputClass}
+          />
+
+          <textarea
+            placeholder="Observaciones"
+            value={observacionesCaja}
+            onChange={(e) => setObservacionesCaja(e.target.value)}
+            className={`${inputClass} mt-4 min-h-[120px]`}
+          />
+        </div>
+
+        <button
+          className="mt-4 rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white"
+          onClick={async () => {
+            if (!empresaActiva || !cajaAbierta) return;
+
+            const efectivo = Number(efectivoContadoCaja || 0);
+            const esperado = Number(cajaAbierta.monto_inicial || 0);
+
+            await supabase
+              .from("cajas")
+              .update({
+                hora_cierre: new Date().toLocaleTimeString(),
+                efectivo_contado: efectivo,
+                efectivo_esperado: esperado,
+                diferencia: efectivo - esperado,
+                observaciones: observacionesCaja,
+                estado: "cerrada",
+              })
+              .eq("id", cajaAbierta.id);
+
+            setCajaAbierta(null);
+            setEfectivoContadoCaja("");
+            setObservacionesCaja("");
+
+            await cargarCajas(empresaActiva.ruc);
+
+            alert("Caja cerrada correctamente");
+          }}
+        >
+          Cerrar caja
+        </button>
+      </div>
+    )}
+
+  </section>
+)}
           {seccion === "inventario" && (
   <section>
     <h1 className="text-2xl sm:text-3xl font-bold">Inventario</h1>

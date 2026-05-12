@@ -97,6 +97,11 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
   const [itemsFactura, setItemsFactura] = useState<any[]>([]);
 
   const [facturas, setFacturas] = useState<any[]>([]);
+  const [cajas, setCajas] = useState<any[]>([]);
+  const [cajaAbierta, setCajaAbierta] = useState<any>(null);
+  const [montoInicialCaja, setMontoInicialCaja] = useState("");
+  const [efectivoContadoCaja, setEfectivoContadoCaja] = useState("");
+  const [observacionesCaja, setObservacionesCaja] = useState("");
   const [productos, setProductos] = useState<any[]>([]);
   const [empleadosPlanilla, setEmpleadosPlanilla] = useState<any[]>([]);
   const [pagosPlanilla, setPagosPlanilla] = useState<any[]>([]);
@@ -253,6 +258,7 @@ const guardarBodega = async () => {
 };
 
   const cargarFacturas = async (rucEmpresa: string) => {
+    
     const { data } = await supabase
       .from("facturas")
       .select("*")
@@ -261,6 +267,18 @@ const guardarBodega = async () => {
 
     setFacturas(data || []);
   };
+  const cargarCajas = async (rucEmpresa: string) => {
+  const { data } = await supabase
+    .from("cajas")
+    .select("*")
+    .eq("empresa_ruc", rucEmpresa)
+    .order("created_at", { ascending: false });
+
+  setCajas(data || []);
+  setCajaAbierta(
+    (data || []).find((caja: any) => caja.estado === "abierta") || null
+  );
+};
 
   const cargarEmpleadosPlanilla = async (rucEmpresa: string) => {
     const { data } = await supabase
@@ -356,6 +374,7 @@ const guardarBodega = async () => {
     await cargarMovimientosInventario(ruc);
     await cargarKardexInventario(ruc);
     await cargarFacturas(ruc);
+    await cargarCajas(ruc);
     await cargarEmpleadosPlanilla(ruc);
     await cargarPagosPlanilla(ruc);
     await cargarMovimientosContables(ruc);
@@ -2890,6 +2909,7 @@ document.body.removeChild(tempDiv);
     ["planilla", "Planilla"],
     ["clientes", "Clientes"],
     ["facturacion", "Facturación"],
+    ["caja", "Caja"],
     ["contabilidad", "Contabilidad"],
     ["inventario", "Inventario"],
     ["reportes", "Reportes"],

@@ -4119,37 +4119,61 @@ setTimeout(() => {
 
           {seccion === "caja" && (
   <section className="space-y-6">
+    <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Caja</h1>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+            Control de apertura, cierre y arqueo diario de caja.
+          </p>
+        </div>
 
-    <div className="rounded-3xl border border-white/10 bg-white p-6 shadow-xl dark:bg-slate-900">
-      <h1 className="text-2xl sm:text-3xl font-bold">
-        Caja
-      </h1>
-
-      <p className="mt-2 opacity-70">
-        Apertura y cierre de caja diario.
-      </p>
+        <div
+          className={`rounded-2xl px-4 py-2 text-sm font-bold ${
+            cajaAbierta
+              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+          }`}
+        >
+          {cajaAbierta ? "Caja abierta" : "Caja cerrada"}
+        </div>
+      </div>
     </div>
 
     {!cajaAbierta && (
-      <div className="rounded-3xl border border-white/10 bg-white p-6 shadow-xl dark:bg-slate-900">
-        <h2 className="text-xl font-bold">
-          Aperturar caja
-        </h2>
+      <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">
+        <h2 className="text-xl font-bold">Aperturar caja</h2>
 
-        <div className="mt-4">
-          <input
-            type="number"
-            placeholder="Monto inicial"
-            value={montoInicialCaja}
-            onChange={(e) => setMontoInicialCaja(e.target.value)}
-            className={inputClass}
-          />
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-300">
+          Ingresa el efectivo inicial con el que inicia operaciones la caja.
+        </p>
+
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-semibold">
+              Monto inicial
+            </label>
+
+            <input
+              type="number"
+              placeholder="Ejemplo: 5000"
+              value={montoInicialCaja}
+              onChange={(e) => setMontoInicialCaja(e.target.value)}
+              className={inputClass}
+            />
+          </div>
         </div>
 
         <button
-          className="mt-4 rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white"
+          type="button"
+          className="mt-6 rounded-2xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"
           onClick={async () => {
             if (!empresaActiva) return;
+
+            if (!montoInicialCaja) {
+              alert("Ingresa el monto inicial de caja");
+              return;
+            }
 
             const nuevaCaja = {
               empresa_ruc: empresaActiva.ruc,
@@ -4159,10 +4183,14 @@ setTimeout(() => {
               estado: "abierta",
             };
 
-            await supabase.from("cajas").insert([nuevaCaja]);
+            const { error } = await supabase.from("cajas").insert([nuevaCaja]);
+
+            if (error) {
+              alert("Error aperturando caja: " + error.message);
+              return;
+            }
 
             setMontoInicialCaja("");
-
             await cargarCajas(empresaActiva.ruc);
 
             alert("Caja aperturada correctamente");
@@ -4174,84 +4202,96 @@ setTimeout(() => {
     )}
 
     {cajaAbierta && (
-      <div className="rounded-3xl border border-green-500/30 bg-white p-6 shadow-xl dark:bg-slate-900">
+      <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
           <div>
             <h2 className="text-xl font-bold text-green-600">
               Caja abierta
             </h2>
 
-            <p className="mt-1 opacity-70">
-              Aperturada por {cajaAbierta.usuario_nombre}
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">
+              Aperturada por {cajaAbierta.usuario_nombre || "Administrador"}
             </p>
           </div>
 
-          <div className="rounded-2xl bg-green-100 px-4 py-2 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+          <div className="rounded-2xl bg-green-100 px-4 py-2 text-sm font-bold text-green-700 dark:bg-green-900/30 dark:text-green-300">
             Activa
           </div>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
-
           <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
-            <p className="text-sm opacity-70">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               Monto inicial
             </p>
-
             <h3 className="mt-2 text-2xl font-bold">
               NIO {Number(cajaAbierta.monto_inicial || 0).toFixed(2)}
             </h3>
           </div>
 
           <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
-            <p className="text-sm opacity-70">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               Hora apertura
             </p>
-
             <h3 className="mt-2 text-2xl font-bold">
-              {cajaAbierta.hora_apertura}
+              {cajaAbierta.hora_apertura || "No registrada"}
             </h3>
           </div>
 
           <div className="rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
-            <p className="text-sm opacity-70">
+            <p className="text-sm text-slate-500 dark:text-slate-300">
               Estado
             </p>
-
             <h3 className="mt-2 text-2xl font-bold text-green-600">
               ABIERTA
             </h3>
           </div>
-
         </div>
 
-        <div className="mt-6">
-          <input
-            type="number"
-            placeholder="Efectivo contado al cierre"
-            value={efectivoContadoCaja}
-            onChange={(e) => setEfectivoContadoCaja(e.target.value)}
-            className={inputClass}
-          />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-semibold">
+              Efectivo contado al cierre
+            </label>
 
-          <textarea
-            placeholder="Observaciones"
-            value={observacionesCaja}
-            onChange={(e) => setObservacionesCaja(e.target.value)}
-            className={`${inputClass} mt-4 min-h-[120px]`}
-          />
+            <input
+              type="number"
+              placeholder="Ejemplo: 8500"
+              value={efectivoContadoCaja}
+              onChange={(e) => setEfectivoContadoCaja(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold">
+              Observaciones
+            </label>
+
+            <textarea
+              placeholder="Ejemplo: cierre correcto, faltante, sobrante..."
+              value={observacionesCaja}
+              onChange={(e) => setObservacionesCaja(e.target.value)}
+              className={`${inputClass} min-h-[110px]`}
+            />
+          </div>
         </div>
 
         <button
-          className="mt-4 rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white"
+          type="button"
+          className="mt-6 rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-700"
           onClick={async () => {
             if (!empresaActiva || !cajaAbierta) return;
+
+            if (!efectivoContadoCaja) {
+              alert("Ingresa el efectivo contado al cierre");
+              return;
+            }
 
             const efectivo = Number(efectivoContadoCaja || 0);
             const esperado = Number(cajaAbierta.monto_inicial || 0);
 
-            await supabase
+            const { error } = await supabase
               .from("cajas")
               .update({
                 hora_cierre: new Date().toLocaleTimeString(),
@@ -4262,6 +4302,11 @@ setTimeout(() => {
                 estado: "cerrada",
               })
               .eq("id", cajaAbierta.id);
+
+            if (error) {
+              alert("Error cerrando caja: " + error.message);
+              return;
+            }
 
             setCajaAbierta(null);
             setEfectivoContadoCaja("");
@@ -4277,6 +4322,61 @@ setTimeout(() => {
       </div>
     )}
 
+    <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">
+      <h2 className="text-xl font-bold">Historial de cajas</h2>
+
+      <div className="mt-4 overflow-x-auto">
+        <table className="w-full min-w-[800px] text-left text-sm">
+          <thead className="bg-slate-100 dark:bg-slate-800">
+            <tr>
+              <th className="px-4 py-3">Fecha</th>
+              <th className="px-4 py-3">Usuario</th>
+              <th className="px-4 py-3">Inicial</th>
+              <th className="px-4 py-3">Contado</th>
+              <th className="px-4 py-3">Diferencia</th>
+              <th className="px-4 py-3">Estado</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {cajas.map((caja: any) => (
+              <tr key={caja.id} className="border-b border-slate-200 dark:border-slate-700">
+                <td className="px-4 py-3">{caja.fecha || "-"}</td>
+                <td className="px-4 py-3">{caja.usuario_nombre || "-"}</td>
+                <td className="px-4 py-3">
+                  NIO {Number(caja.monto_inicial || 0).toFixed(2)}
+                </td>
+                <td className="px-4 py-3">
+                  NIO {Number(caja.efectivo_contado || 0).toFixed(2)}
+                </td>
+                <td className="px-4 py-3 font-bold">
+                  NIO {Number(caja.diferencia || 0).toFixed(2)}
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                      caja.estado === "abierta"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {caja.estado}
+                  </span>
+                </td>
+              </tr>
+            ))}
+
+            {cajas.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-center opacity-60" colSpan={6}>
+                  No hay registros de caja todavía.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </section>
 )}
           {seccion === "inventario" && (

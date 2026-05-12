@@ -2918,9 +2918,11 @@ document.body.removeChild(tempDiv);
   ];
 
   const menuEmpleado = [
-    ["facturacion", "Facturación"],
-    ["inventario", "Inventario"],
-  ];
+  ["dashboard", "Dashboard"],
+  ["facturacion", "Facturación"],
+  ["caja", "Caja"],
+  ["inventario", "Inventario"],
+];
 
   const esAdmin = String(usuarioActivo?.rol || "").toLowerCase() === "admin";
   const menuActual = esAdmin ? menuAdmin : menuEmpleado;

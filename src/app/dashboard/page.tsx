@@ -2926,6 +2926,13 @@ document.body.removeChild(tempDiv);
 
   const esAdmin = String(usuarioActivo?.rol || "").toLowerCase() === "admin";
   const menuActual = esAdmin ? menuAdmin : menuEmpleado;
+  const modulosPermitidosEmpleado = ["dashboard", "facturacion", "caja", "inventario"];
+
+useEffect(() => {
+  if (!esAdmin && !modulosPermitidosEmpleado.includes(seccion)) {
+    setSeccion("dashboard");
+  }
+}, [esAdmin, seccion]);
 
   const fondo = modoOscuro ? "bg-slate-950" : "bg-slate-100";
   const texto = modoOscuro ? "text-white" : "text-gray-900";

@@ -377,7 +377,12 @@ const guardarBodega = async () => {
     await cargarBodegas(ruc);
     await cargarMovimientosInventario(ruc);
     await cargarKardexInventario(ruc);
-    await cargarFacturas(ruc);
+    await cargarFacturas(ruc);const { data: cxcData } = await supabase
+  .from("cuentas_por_cobrar")
+  .select("*")
+  .eq("empresa_ruc", ruc);
+
+setCuentasPorCobrar(cxcData || []);
     await cargarCajas(ruc);
     await cargarEmpleadosPlanilla(ruc);
     await cargarPagosPlanilla(ruc);
@@ -4247,6 +4252,96 @@ setTimeout(() => {
             </section>
           )}
 
+          {cuentasPorCobrar.length > 0 && (
+  <section className="mt-8">
+
+    <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${tarjeta}`}>
+      
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold">
+            Cuentas por cobrar
+          </h2>
+
+          <p className="mt-1 text-sm opacity-70">
+            Facturas pendientes de pago
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="text-sm opacity-70">
+            Total pendientes
+          </p>
+
+          <p className="text-2xl font-black text-red-500">
+            NIO{" "}
+            {cuentasPorCobrar
+              .reduce((acc, item) => acc + Number(item.saldo || 0), 0)
+              .toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full min-w-[900px] text-left text-sm">
+          
+          <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+            <tr>
+              <th className="px-4 py-3">Factura</th>
+              <th className="px-4 py-3">Cliente</th>
+              <th className="px-4 py-3">Monto</th>
+              <th className="px-4 py-3">Saldo</th>
+              <th className="px-4 py-3">Estado</th>
+              <th className="px-4 py-3">Fecha</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {cuentasPorCobrar.map((cxc: any) => (
+
+              <tr
+                key={cxc.id}
+                className="border-b border-slate-200 dark:border-slate-800"
+              >
+                <td className="px-4 py-3 font-semibold">
+                  {cxc.numero_factura}
+                </td>
+
+                <td className="px-4 py-3">
+                  {cxc.cliente}
+                </td>
+
+                <td className="px-4 py-3">
+                  NIO {Number(cxc.monto_total || 0).toFixed(2)}
+                </td>
+
+                <td className="px-4 py-3 font-bold text-red-500">
+                  NIO {Number(cxc.saldo || 0).toFixed(2)}
+                </td>
+
+                <td className="px-4 py-3">
+                  <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                    {cxc.estado}
+                  </span>
+                </td>
+
+                <td className="px-4 py-3">
+                  {cxc.fecha}
+                </td>
+              </tr>
+
+            ))}
+
+          </tbody>
+
+        </table>
+      </div>
+
+    </div>
+
+  </section>
+)}
           {seccion === "caja" && (
   <section className="space-y-6">
     <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">

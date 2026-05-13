@@ -90,6 +90,9 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
   const [cliente, setCliente] = useState("");
   const [tipoPago, setTipoPago] = useState("Efectivo");
   const [estadoPago, setEstadoPago] = useState("Pagada");
+  const [montoEfectivo, setMontoEfectivo] = useState("");
+const [montoTransferencia, setMontoTransferencia] = useState("");
+const [montoPOS, setMontoPOS] = useState("");
   const [proyectoFactura, setProyectoFactura] = useState("");
   const [descuentoFactura, setDescuentoFactura] = useState("");
   const [productoSeleccionado, setProductoSeleccionado] = useState("");
@@ -97,6 +100,7 @@ const [usuarioAprobadorClienteNuevo, setUsuarioAprobadorClienteNuevo] = useState
   const [itemsFactura, setItemsFactura] = useState<any[]>([]);
 
   const [facturas, setFacturas] = useState<any[]>([]);
+  const [cuentasPorCobrar, setCuentasPorCobrar] = useState<any[]>([]);
   const [cajas, setCajas] = useState<any[]>([]);
   const [cajaAbierta, setCajaAbierta] = useState<any>(null);
   const [montoInicialCaja, setMontoInicialCaja] = useState("");
@@ -965,6 +969,15 @@ const totalConIVA = baseConIVA - descuento;
       alert("Completa cliente y agrega al menos un producto");
       return;
     }
+    const totalPagadoMixto =
+  Number(montoEfectivo || 0) +
+  Number(montoTransferencia || 0) +
+  Number(montoPOS || 0);
+
+if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2))) {
+  alert("El total del pago mixto debe ser igual al total de la factura");
+  return;
+}
 
     const { data: facturaNueva, error } = await supabase
       .from("facturas")
@@ -980,6 +993,11 @@ const totalConIVA = baseConIVA - descuento;
           cliente_ruc_cedula: clienteData?.ruc_cedula || "",
           tipo_pago: tipoPago,
           estado_pago: estadoPago,
+          metodo_pago: tipoPago,
+          monto_efectivo: tipoPago === "Mixto" ? Number(montoEfectivo || 0) : tipoPago === "Efectivo" ? Number(totalConIVA || 0) : 0,
+          monto_transferencia: tipoPago === "Mixto" ? Number(montoTransferencia || 0) : tipoPago === "Transferencia" ? Number(totalConIVA || 0) : 0,
+          monto_pos: tipoPago === "Mixto" ? Number(montoPOS || 0) : tipoPago === "POS" ? Number(totalConIVA || 0) : 0,
+          saldo_pendiente: tipoPago === "Credito" ? Number(totalConIVA || 0) : 0,
           proyecto: proyectoFactura,
           subtotal,
           iva,
@@ -1048,12 +1066,53 @@ const totalConIVA = baseConIVA - descuento;
     },
   ]);
 }
+    if (tipoPago === "Credito") {
+  await supabase.from("cuentas_por_cobrar").insert([
+    {
+      empresa_ruc: empresaActiva.ruc,
+      factura_id: facturaNueva.id,
+      numero_factura: facturaNueva.numero_factura,
+      cliente: facturaNueva.cliente,
+      monto_total: Number(facturaNueva.total || 0),
+      monto_pagado: 0,
+      saldo: Number(facturaNueva.total || 0),
+      estado: "pendiente",
+    },
+  ]);
+}
+    await supabase.from("transacciones_contables").insert([
+  {
+    empresa_ruc: empresaActiva.ruc,
+    factura_id: facturaNueva.id,
+    numero_factura: facturaNueva.numero_factura,
+    tipo_operacion: tipoPago === "Credito" ? "venta_credito" : "venta_contado",
+    cuenta: tipoPago === "Credito" ? "Cuentas por cobrar" : "Caja/Banco",
+    movimiento: "debe",
+    monto: Number(facturaNueva.total || 0),
+    descripcion: `Registro de venta ${facturaNueva.numero_factura}`,
+    usuario_nombre: usuarioActivo.nombre,
+  },
+  {
+    empresa_ruc: empresaActiva.ruc,
+    factura_id: facturaNueva.id,
+    numero_factura: facturaNueva.numero_factura,
+    tipo_operacion: "iva_por_pagar",
+    cuenta: "IVA por pagar",
+    movimiento: "haber",
+    monto: Number(facturaNueva.iva || 0),
+    descripcion: `IVA cobrado en factura ${facturaNueva.numero_factura}`,
+    usuario_nombre: usuarioActivo.nombre,
+  },
+]);
     setFacturas((actuales) => [facturaNueva, ...actuales]);
 
     setCliente("");
     setClienteSeleccionado("");
     setTipoPago("Efectivo");
     setEstadoPago("Pagada");
+    setMontoEfectivo("");
+    setMontoTransferencia("");
+    setMontoPOS("");
     setProyectoFactura("");
     setDescuentoFactura("");
     setItemsFactura([]);
@@ -3974,9 +4033,58 @@ setTimeout(() => {
                             className={`${inputClass} mt-1`}
                           >
                             <option value="Efectivo">Efectivo</option>
-                            <option value="Tarjeta">Tarjeta</option>
                             <option value="Transferencia">Transferencia</option>
+                            <option value="POS">POS</option>
+                            <option value="Mixto">Mixto</option>
+                            <option value="Credito">Crédito</option>
                           </select>
+                          {tipoPago === "Mixto" && (
+  <div className="mt-4 grid gap-4 sm:grid-cols-3">
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">
+        Efectivo
+      </label>
+
+      <input
+        type="number"
+        placeholder="0.00"
+        value={montoEfectivo}
+        onChange={(e) => setMontoEfectivo(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">
+        Transferencia
+      </label>
+
+      <input
+        type="number"
+        placeholder="0.00"
+        value={montoTransferencia}
+        onChange={(e) => setMontoTransferencia(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold">
+        POS
+      </label>
+
+      <input
+        type="number"
+        placeholder="0.00"
+        value={montoPOS}
+        onChange={(e) => setMontoPOS(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+  </div>
+)}
                         </div>
 
                         <div>

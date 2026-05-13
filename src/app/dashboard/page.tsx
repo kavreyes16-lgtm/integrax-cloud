@@ -3754,28 +3754,43 @@ useEffect(() => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const bloque = document.getElementById("facturas-guardadas");
-                    bloque?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className="w-full sm:w-auto rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
-                >
-                  Facturas guardadas ›
-                </button>
-                <button
-  type="button"
-  onClick={() => {
-    const bloque = document.getElementById("cuentas-por-cobrar");
-    bloque?.scrollIntoView({ behavior: "smooth" });
-  }}
-  className="mt-3 w-full sm:w-auto rounded-2xl border border-red-200 bg-white px-5 py-4 text-lg font-semibold shadow-sm transition hover:border-red-300 hover:bg-red-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
->
-  Cuentas por cobrar ›
-</button>
-              </div>
+                <div className="flex flex-col gap-3 sm:items-end">
 
+  <button
+    type="button"
+    onClick={() => {
+      const bloque = document.getElementById("facturas-guardadas");
+      bloque?.scrollIntoView({ behavior: "smooth" });
+    }}
+    className={`w-full sm:w-[320px] rounded-2xl border px-6 py-5 text-lg font-bold shadow-sm transition
+    ${
+      modoOscuro
+        ? "border-slate-700 bg-slate-900 text-white hover:bg-slate-800"
+        : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+    }`}
+  >
+    Facturas guardadas ›
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      const bloque = document.getElementById("cuentas-por-cobrar");
+      bloque?.scrollIntoView({ behavior: "smooth" });
+    }}
+    className={`w-full sm:w-[320px] rounded-2xl border px-6 py-5 text-lg font-bold shadow-sm transition
+    ${
+      modoOscuro
+        ? "border-red-500/30 bg-red-950/30 text-red-300 hover:bg-red-900/40"
+        : "border-red-200 bg-white text-red-600 hover:bg-red-50"
+    }`}
+  >
+    Cuentas por cobrar ›
+  </button>
+
+</div>
+
+              </div>
               <form onSubmit={guardarFactura} className="mt-6">
                 <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
                   <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${modoOscuro ? "border-slate-700 bg-slate-900" : "border-gray-200 bg-white"}`}>

@@ -101,6 +101,10 @@ const [montoPOS, setMontoPOS] = useState("");
 
   const [facturas, setFacturas] = useState<any[]>([]);
   const [cuentasPorCobrar, setCuentasPorCobrar] = useState<any[]>([]);
+  const [cuentaCobrandoId, setCuentaCobrandoId] = useState("");
+  const [montoPagoCxc, setMontoPagoCxc] = useState("");
+  const [metodoPagoCxc, setMetodoPagoCxc] = useState("Efectivo");
+  const [observacionPagoCxc, setObservacionPagoCxc] = useState("");
   const [cajas, setCajas] = useState<any[]>([]);
   const [cajaAbierta, setCajaAbierta] = useState<any>(null);
   const [montoInicialCaja, setMontoInicialCaja] = useState("");
@@ -4207,6 +4211,7 @@ setTimeout(() => {
                         <tr>
                           <th className="px-4 py-3"># Factura</th>
                           <th className="px-4 py-3">Fecha</th>
+                          <th className="px-4 py-3">Acciones</th>
                           <th className="px-4 py-3">Cliente</th>
                           <th className="px-4 py-3">Proyecto</th>
                           <th className="px-4 py-3">Total</th>
@@ -4357,6 +4362,15 @@ setTimeout(() => {
                 <td className="px-4 py-3">
                   {cxc.fecha}
                 </td>
+                <td className="px-4 py-3">
+  <button
+    type="button"
+    onClick={() => setCuentaCobrandoId(cxc.id)}
+    className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700"
+  >
+    Registrar pago
+  </button>
+</td>
               </tr>
 
             ))}
@@ -4365,6 +4379,104 @@ setTimeout(() => {
 
         </table>
       </div>
+      {cuentaCobrandoId && (
+  <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-slate-900">
+    <h3 className="text-lg font-bold text-green-700">Registrar pago</h3>
+
+    <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <input
+        type="number"
+        placeholder="Monto del abono"
+        value={montoPagoCxc}
+        onChange={(e) => setMontoPagoCxc(e.target.value)}
+        className={inputClass}
+      />
+
+      <select
+        value={metodoPagoCxc}
+        onChange={(e) => setMetodoPagoCxc(e.target.value)}
+        className={inputClass}
+      >
+        <option value="Efectivo">Efectivo</option>
+        <option value="Transferencia">Transferencia</option>
+        <option value="POS">POS</option>
+      </select>
+
+      <input
+        type="text"
+        placeholder="Observación"
+        value={observacionPagoCxc}
+        onChange={(e) => setObservacionPagoCxc(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+    <button
+  type="button"
+  onClick={async () => {
+
+    const cuenta = cuentasPorCobrar.find(
+      (c: any) => c.id === cuentaCobrandoId
+    );
+
+    if (!cuenta) return;
+
+    const monto = Number(montoPagoCxc || 0);
+
+    if (monto <= 0) {
+      alert("Ingresa un monto válido");
+      return;
+    }
+
+    const nuevoSaldo =
+      Number(cuenta.saldo || 0) - monto;
+
+    await supabase
+      .from("pagos_cuentas_por_cobrar")
+      .insert({
+        empresa_ruc: empresaActiva?.ruc,
+        cuenta_id: cuenta.id,
+        numero_factura: cuenta.numero_factura,
+        cliente: cuenta.cliente,
+        monto,
+        metodo_pago: metodoPagoCxc,
+        observacion: observacionPagoCxc,
+      });
+
+    await supabase
+      .from("cuentas_por_cobrar")
+      .update({
+        saldo: nuevoSaldo,
+        estado:
+          nuevoSaldo <= 0
+            ? "Pagada"
+            : "Pendiente",
+      })
+      .eq("id", cuenta.id);
+
+    await cargarFacturas(empresaActiva.ruc);
+
+    const { data: nuevasCxc } = await supabase
+      .from("cuentas_por_cobrar")
+      .select("*")
+      .eq("empresa_ruc", empresaActiva.ruc);
+
+    setCuentasPorCobrar(nuevasCxc || []);
+
+    setCuentaCobrandoId("");
+    setMontoPagoCxc("");
+    setMetodoPagoCxc("Efectivo");
+    setObservacionPagoCxc("");
+
+    alert("Pago registrado correctamente");
+
+  }}
+  className="mt-4 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"
+>
+  Guardar pago
+</button>
+  </div>
+)}
 
     </div>
 

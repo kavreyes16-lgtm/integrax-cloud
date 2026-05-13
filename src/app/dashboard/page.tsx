@@ -2570,6 +2570,58 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
 
   doc.save("libro-diario.pdf");
 };
+const generarPDFCuentasPorCobrar = async () => {
+
+  const jsPDFModule = await import("jspdf");
+  const autoTableModule = await import("jspdf-autotable");
+
+  const jsPDF = jsPDFModule.default;
+  const autoTable = autoTableModule.default;
+
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Reporte de Cuentas por Cobrar", 14, 20);
+
+  autoTable(doc, {
+    startY: 30,
+
+    head: [[
+      "Factura",
+      "Cliente",
+      "Monto",
+      "Saldo",
+      "Estado",
+      "Fecha",
+    ]],
+
+    body: cuentasPorCobrar.map((cxc: any) => [
+
+      cxc.numero_factura || "-",
+
+      cxc.cliente || "-",
+
+      `NIO ${Number(cxc.monto_total || 0).toFixed(2)}`,
+
+      `NIO ${Number(cxc.saldo || 0).toFixed(2)}`,
+
+      cxc.estado || "-",
+
+      new Date(cxc.created_at).toLocaleDateString("es-NI"),
+
+    ]),
+
+    styles: {
+      fontSize: 9,
+    },
+
+    headStyles: {
+      fillColor: [220, 38, 38],
+    },
+  });
+
+  doc.save("cuentas-por-cobrar.pdf");
+};
   const generarTicketPOS = async (factura: any) => {
   const { data: items } = await supabase
     .from("factura_items")
@@ -4398,6 +4450,13 @@ setTimeout(() => {
         </div>
 
         <div className="text-right">
+          <button
+  type="button"
+  onClick={generarPDFCuentasPorCobrar}
+  className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+>
+  Exportar PDF
+</button>
           <p className="text-sm opacity-70">
             Total pendientes
           </p>

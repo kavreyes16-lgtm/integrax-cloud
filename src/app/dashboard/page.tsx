@@ -3764,6 +3764,16 @@ useEffect(() => {
                 >
                   Facturas guardadas ›
                 </button>
+                <button
+  type="button"
+  onClick={() => {
+    const bloque = document.getElementById("cuentas-por-cobrar");
+    bloque?.scrollIntoView({ behavior: "smooth" });
+  }}
+  className="mt-3 w-full sm:w-auto rounded-2xl border border-red-200 bg-white px-5 py-4 text-lg font-semibold shadow-sm transition hover:border-red-300 hover:bg-red-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+>
+  Cuentas por cobrar ›
+</button>
               </div>
 
               <form onSubmit={guardarFactura} className="mt-6">
@@ -4253,7 +4263,10 @@ setTimeout(() => {
           )}
 
           {cuentasPorCobrar.length > 0 && (
-  <section className="mt-8">
+  <section
+  id="cuentas-por-cobrar"
+  className="mt-8"
+>
 
     <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${tarjeta}`}>
       

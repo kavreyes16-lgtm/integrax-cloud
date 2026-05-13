@@ -4264,6 +4264,38 @@ setTimeout(() => {
         className={inputClass}
       />
     </div>
+    <div className="sm:col-span-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-slate-900">
+  <div className="grid gap-3 sm:grid-cols-3 text-sm">
+    <div>
+      <p className="font-semibold text-slate-500">Total factura</p>
+      <p className="text-xl font-bold">NIO {totalConIVA.toFixed(2)}</p>
+    </div>
+
+    <div>
+      <p className="font-semibold text-slate-500">Total ingresado</p>
+      <p className="text-xl font-bold">
+        NIO {(Number(montoEfectivo || 0) + Number(montoTransferencia || 0) + Number(montoPOS || 0)).toFixed(2)}
+      </p>
+    </div>
+
+    <div>
+      <p className="font-semibold text-slate-500">Diferencia</p>
+      <p
+        className={`text-xl font-bold ${
+          totalConIVA -
+            (Number(montoEfectivo || 0) +
+              Number(montoTransferencia || 0) +
+              Number(montoPOS || 0)) ===
+          0
+            ? "text-green-600"
+            : "text-red-600"
+        }`}
+      >
+        NIO {(totalConIVA - (Number(montoEfectivo || 0) + Number(montoTransferencia || 0) + Number(montoPOS || 0))).toFixed(2)}
+      </p>
+    </div>
+  </div>
+</div>
 
   </div>
 )}

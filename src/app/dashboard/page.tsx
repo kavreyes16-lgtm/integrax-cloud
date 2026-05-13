@@ -1120,6 +1120,28 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
     descripcion: `IVA cobrado en factura ${facturaNueva.numero_factura}`,
     usuario_nombre: usuarioActivo.nombre,
   },
+  {
+  empresa_ruc: empresaActiva.ruc,
+  factura_id: facturaNueva.id,
+  numero_factura: facturaNueva.numero_factura,
+  tipo_operacion: "costo_venta",
+  cuenta: "Costo de venta",
+  movimiento: "debe",
+  monto: Number(subtotal || 0),
+  descripcion: `Costo de productos vendidos ${facturaNueva.numero_factura}`,
+  usuario_nombre: usuarioActivo.nombre,
+},
+{
+  empresa_ruc: empresaActiva.ruc,
+  factura_id: facturaNueva.id,
+  numero_factura: facturaNueva.numero_factura,
+  tipo_operacion: "salida_inventario",
+  cuenta: "Inventario",
+  movimiento: "haber",
+  monto: Number(subtotal || 0),
+  descripcion: `Disminución de inventario por venta ${facturaNueva.numero_factura}`,
+  usuario_nombre: usuarioActivo.nombre,
+},
 ]);
     setFacturas((actuales) => [facturaNueva, ...actuales]);
 

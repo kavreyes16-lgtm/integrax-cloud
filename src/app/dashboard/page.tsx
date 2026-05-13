@@ -2530,6 +2530,46 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
     doc.save(`pago-planilla-${pago.empleado_nombre}.pdf`);
   };
 
+  const generarPDFLibroDiario = async () => {
+  const jsPDFModule = await import("jspdf");
+  const autoTableModule = await import("jspdf-autotable");
+
+  const jsPDF = jsPDFModule.default;
+  const autoTable = autoTableModule.default;
+
+  const doc = new jsPDF("landscape");
+
+  doc.setFontSize(18);
+  doc.text("Libro Diario Contable", 14, 20);
+
+  autoTable(doc, {
+    startY: 30,
+    head: [[
+      "Fecha",
+      "Factura",
+      "Operación",
+      "Cuenta",
+      "Debe",
+      "Haber",
+      "Descripción",
+      "Usuario",
+    ]],
+    body: transaccionesContables.map((t: any) => [
+      new Date(t.created_at).toLocaleString("es-NI"),
+      t.numero_factura || "-",
+      t.tipo_operacion || "-",
+      t.cuenta || "-",
+      t.movimiento === "debe" ? `NIO ${Number(t.monto || 0).toFixed(2)}` : "-",
+      t.movimiento === "haber" ? `NIO ${Number(t.monto || 0).toFixed(2)}` : "-",
+      t.descripcion || "-",
+      t.usuario_nombre || "-",
+    ]),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [37, 99, 235] },
+  });
+
+  doc.save("libro-diario.pdf");
+};
   const generarTicketPOS = async (factura: any) => {
   const { data: items } = await supabase
     .from("factura_items")
@@ -4371,6 +4411,13 @@ setTimeout(() => {
         </div>
       </div>
 
+      <button
+  type="button"
+  onClick={generarPDFLibroDiario}
+  className="mt-3 rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+>
+  Exportar PDF
+</button>
       <div className="mt-6 overflow-x-auto">
         <table className="w-full min-w-[900px] text-left text-sm">
           

@@ -105,6 +105,7 @@ const [montoPOS, setMontoPOS] = useState("");
   const [montoPagoCxc, setMontoPagoCxc] = useState("");
   const [metodoPagoCxc, setMetodoPagoCxc] = useState("Efectivo");
   const [observacionPagoCxc, setObservacionPagoCxc] = useState("");
+  const [pagosCxc, setPagosCxc] = useState<any[]>([]);
   const [cajas, setCajas] = useState<any[]>([]);
   const [cajaAbierta, setCajaAbierta] = useState<any>(null);
   const [montoInicialCaja, setMontoInicialCaja] = useState("");
@@ -387,6 +388,13 @@ const guardarBodega = async () => {
   .eq("empresa_ruc", ruc);
 
 setCuentasPorCobrar(cxcData || []);
+const { data: pagosCxcData } = await supabase
+  .from("pagos_cuentas_por_cobrar")
+  .select("*")
+  .eq("empresa_ruc", ruc)
+  .order("created_at", { ascending: false });
+
+setPagosCxc(pagosCxcData || []);
     await cargarCajas(ruc);
     await cargarEmpleadosPlanilla(ruc);
     await cargarPagosPlanilla(ruc);
@@ -4523,6 +4531,92 @@ if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
 
   </section>
 )}
+          <section className="mt-8">
+
+  <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${tarjeta}`}>
+
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold">
+          Historial de pagos
+        </h2>
+
+        <p className="mt-1 text-sm opacity-70">
+          Abonos registrados en cuentas por cobrar
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-6 overflow-x-auto">
+
+      <table className="w-full min-w-[900px] text-left text-sm">
+
+        <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+          <tr>
+            <th className="px-4 py-3">Factura</th>
+            <th className="px-4 py-3">Cliente</th>
+            <th className="px-4 py-3">Monto</th>
+            <th className="px-4 py-3">Método</th>
+            <th className="px-4 py-3">Observación</th>
+            <th className="px-4 py-3">Fecha</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {pagosCxc.map((pago: any) => (
+
+            <tr
+              key={pago.id}
+              className="border-b border-slate-200 dark:border-slate-800"
+            >
+              <td className="px-4 py-3 font-semibold">
+                {pago.numero_factura}
+              </td>
+
+              <td className="px-4 py-3">
+                {pago.cliente}
+              </td>
+
+              <td className="px-4 py-3 font-bold text-green-600">
+                NIO {Number(pago.monto || 0).toFixed(2)}
+              </td>
+
+              <td className="px-4 py-3">
+                {pago.metodo_pago}
+              </td>
+
+              <td className="px-4 py-3">
+                {pago.observacion || "-"}
+              </td>
+
+              <td className="px-4 py-3">
+                {new Date(pago.created_at).toLocaleString()}
+              </td>
+            </tr>
+
+          ))}
+
+          {pagosCxc.length === 0 && (
+            <tr>
+              <td
+                colSpan={6}
+                className="px-4 py-6 text-center opacity-60"
+              >
+                No hay pagos registrados todavía.
+              </td>
+            </tr>
+          )}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</section>
           {seccion === "caja" && (
   <section className="space-y-6">
     <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">

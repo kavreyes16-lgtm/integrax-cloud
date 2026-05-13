@@ -4450,13 +4450,6 @@ setTimeout(() => {
         </div>
 
         <div className="text-right">
-          <button
-  type="button"
-  onClick={generarPDFCuentasPorCobrar}
-  className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
->
-  Exportar PDF
-</button>
           <p className="text-sm opacity-70">
             Total pendientes
           </p>

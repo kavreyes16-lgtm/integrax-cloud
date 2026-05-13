@@ -5694,6 +5694,56 @@ if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
                 <p>Facturas válidas: {facturasValidas.length}</p>
                 <p>Facturas erróneas: {facturas.length - facturasValidas.length}</p>
                 <p>Total vendido: NIO {totalVendido.toFixed(2)}</p>
+                <p>
+  Ventas contado: NIO{" "}
+  {facturas
+    .filter((f: any) => f.tipo_pago !== "Credito")
+    .reduce(
+      (acc: number, f: any) =>
+        acc + Number(f.total || 0),
+      0
+    )
+    .toFixed(2)}
+</p>
+
+<p>
+  Ventas crédito: NIO{" "}
+  {facturas
+    .filter((f: any) => f.tipo_pago === "Credito")
+    .reduce(
+      (acc: number, f: any) =>
+        acc + Number(f.total || 0),
+      0
+    )
+    .toFixed(2)}
+</p>
+
+<p>
+  Cuentas por cobrar: NIO{" "}
+  {cuentasPorCobrar
+    .reduce(
+      (acc: number, c: any) =>
+        acc + Number(c.saldo || 0),
+      0
+    )
+    .toFixed(2)}
+</p>
+
+<p>
+  IVA por pagar: NIO{" "}
+  {facturas
+    .reduce(
+      (acc: number, f: any) =>
+        acc + Number(f.iva || 0),
+      0
+    )
+    .toFixed(2)}
+</p>
+
+<p>
+  Caja abierta:{" "}
+  {cajaAbierta ? "Sí" : "No"}
+</p>
                 <p>Ingresos contables: NIO {ingresosContables.toFixed(2)}</p>
                 <p>Egresos contables: NIO {egresosContables.toFixed(2)}</p>
                 <p>Planilla pagada: NIO {totalPlanillaPagada.toFixed(2)}</p>

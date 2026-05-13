@@ -4443,7 +4443,48 @@ setTimeout(() => {
         observacion: observacionPagoCxc,
       });
 
-    await supabase
+    await supabase.from("transacciones_contables").insert([
+  {
+    empresa_ruc: empresaActiva?.ruc,
+    factura_id: cuenta.factura_id,
+    numero_factura: cuenta.numero_factura,
+    tipo_operacion: "pago_cuenta_por_cobrar",
+    cuenta:
+      metodoPagoCxc === "Efectivo"
+        ? "Caja"
+        : "Banco",
+    movimiento: "debe",
+    monto,
+    descripcion: `Pago recibido de ${cuenta.numero_factura}`,
+    usuario_nombre: usuarioActivo?.nombre || "Administrador",
+  },
+  {
+    empresa_ruc: empresaActiva?.ruc,
+    factura_id: cuenta.factura_id,
+    numero_factura: cuenta.numero_factura,
+    tipo_operacion: "pago_cuenta_por_cobrar",
+    cuenta: "Cuentas por cobrar",
+    movimiento: "haber",
+    monto,
+    descripcion: `Abono aplicado a ${cuenta.numero_factura}`,
+    usuario_nombre: usuarioActivo?.nombre || "Administrador",
+  },
+]);
+
+if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
+  await supabase.from("movimientos_caja").insert([
+    {
+      empresa_ruc: empresaActiva?.ruc,
+      caja_id: cajaAbierta.id,
+      factura_id: cuenta.factura_id,
+      tipo: "ingreso",
+      concepto: `Abono CxC ${cuenta.numero_factura}`,
+      monto,
+      usuario_nombre: usuarioActivo?.nombre || "Administrador",
+    },
+  ]);
+}
+      await supabase
       .from("cuentas_por_cobrar")
       .update({
         saldo: nuevoSaldo,

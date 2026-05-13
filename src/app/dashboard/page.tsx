@@ -102,6 +102,8 @@ const [montoPOS, setMontoPOS] = useState("");
   const [facturas, setFacturas] = useState<any[]>([]);
   const [cuentasPorCobrar, setCuentasPorCobrar] = useState<any[]>([]);
   const [transaccionesContables, setTransaccionesContables] = useState<any[]>([]);
+  const [fechaInicioLibro, setFechaInicioLibro] = useState("");
+  const [fechaFinLibro, setFechaFinLibro] = useState("");
   const [cuentaCobrandoId, setCuentaCobrandoId] = useState("");
   const [montoPagoCxc, setMontoPagoCxc] = useState("");
   const [metodoPagoCxc, setMetodoPagoCxc] = useState("Efectivo");
@@ -3311,6 +3313,21 @@ useEffect(() => {
                     contabilidad y planilla de técnicos para una presentación más enfocada.
                   </p>
                 </div>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+  <input
+    type="date"
+    value={fechaInicioLibro}
+    onChange={(e) => setFechaInicioLibro(e.target.value)}
+    className={inputClass}
+  />
+
+  <input
+    type="date"
+    value={fechaFinLibro}
+    onChange={(e) => setFechaFinLibro(e.target.value)}
+    className={inputClass}
+  />
+</div>
 
                 <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-3">
                   <button
@@ -6194,7 +6211,28 @@ if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
           </thead>
 
           <tbody>
-            {transaccionesContables.map((t: any) => (
+            {transaccionesContables
+  .filter((t: any) => {
+
+    if (!fechaInicioLibro && !fechaFinLibro) {
+      return true;
+    }
+
+    const fecha = new Date(t.created_at)
+      .toISOString()
+      .split("T")[0];
+
+    if (fechaInicioLibro && fecha < fechaInicioLibro) {
+      return false;
+    }
+
+    if (fechaFinLibro && fecha > fechaFinLibro) {
+      return false;
+    }
+
+    return true;
+  })
+  .map((t: any) => (
               <tr
                 key={t.id}
                 className={`border-t ${

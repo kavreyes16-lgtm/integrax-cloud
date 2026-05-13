@@ -1035,6 +1035,19 @@ const totalConIVA = baseConIVA - descuento;
         .eq("id", item.id);
     }
 
+    if (cajaAbierta) {
+  await supabase.from("movimientos_caja").insert([
+    {
+      empresa_ruc: empresaActiva.ruc,
+      caja_id: cajaAbierta.id,
+      factura_id: facturaNueva.id,
+      tipo: "ingreso",
+      concepto: `Venta ${facturaNueva.numero_factura}`,
+      monto: Number(facturaNueva.total || 0),
+      usuario_nombre: usuarioActivo?.nombre || "Administrador",
+    },
+  ]);
+}
     setFacturas((actuales) => [facturaNueva, ...actuales]);
 
     setCliente("");

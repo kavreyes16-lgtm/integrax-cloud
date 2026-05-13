@@ -101,6 +101,7 @@ const [montoPOS, setMontoPOS] = useState("");
 
   const [facturas, setFacturas] = useState<any[]>([]);
   const [cuentasPorCobrar, setCuentasPorCobrar] = useState<any[]>([]);
+  const [transaccionesContables, setTransaccionesContables] = useState<any[]>([]);
   const [cuentaCobrandoId, setCuentaCobrandoId] = useState("");
   const [montoPagoCxc, setMontoPagoCxc] = useState("");
   const [metodoPagoCxc, setMetodoPagoCxc] = useState("Efectivo");
@@ -395,6 +396,13 @@ const { data: pagosCxcData } = await supabase
   .order("created_at", { ascending: false });
 
 setPagosCxc(pagosCxcData || []);
+const { data: transaccionesData } = await supabase
+  .from("transacciones_contables")
+  .select("*")
+  .eq("empresa_ruc", ruc)
+  .order("created_at", { ascending: false });
+
+setTransaccionesContables(transaccionesData || []);
     await cargarCajas(ruc);
     await cargarEmpleadosPlanilla(ruc);
     await cargarPagosPlanilla(ruc);
@@ -3022,6 +3030,7 @@ document.body.removeChild(tempDiv);
     ["facturacion", "Facturación"],
     ["caja", "Caja"],
     ["contabilidad", "Contabilidad"],
+    ["libro-diario", "Libro Diario"],
     ["inventario", "Inventario"],
     ["reportes", "Reportes"],
     ["usuarios", "Usuarios"],
@@ -6097,6 +6106,102 @@ if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
             </section>
           )}
 
+          {seccion === "libro-diario" && usuarioActivo.rol === "admin" && (
+  <section>
+    <h1 className="text-2xl sm:text-3xl font-bold">Libro Diario</h1>
+
+    <p className="mt-2 opacity-70">
+      Registro automático de afectaciones contables generadas por facturación, cuentas por cobrar, IVA e inventario.
+    </p>
+
+    <div className={`mt-6 rounded-2xl p-4 sm:p-6 shadow-lg ${tarjeta}`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-xl font-bold">Transacciones contables</h2>
+          <p className="text-sm opacity-70">
+            Debe y Haber generado automáticamente por el sistema.
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-blue-100 px-4 py-2 text-sm font-bold text-blue-700">
+          {transaccionesContables.length} movimientos
+        </div>
+      </div>
+
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full min-w-[1000px] text-left text-sm">
+          <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+            <tr>
+              <th className="px-4 py-3">Fecha</th>
+              <th className="px-4 py-3">Factura</th>
+              <th className="px-4 py-3">Operación</th>
+              <th className="px-4 py-3">Cuenta</th>
+              <th className="px-4 py-3 text-right">Debe</th>
+              <th className="px-4 py-3 text-right">Haber</th>
+              <th className="px-4 py-3">Descripción</th>
+              <th className="px-4 py-3">Usuario</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {transaccionesContables.map((t: any) => (
+              <tr
+                key={t.id}
+                className={`border-t ${
+                  modoOscuro ? "border-slate-700" : "border-gray-100"
+                }`}
+              >
+                <td className="px-4 py-3 whitespace-nowrap">
+                  {new Date(t.created_at).toLocaleString("es-NI")}
+                </td>
+
+                <td className="px-4 py-3 font-semibold">
+                  {t.numero_factura || "-"}
+                </td>
+
+                <td className="px-4 py-3">
+                  {t.tipo_operacion || "-"}
+                </td>
+
+                <td className="px-4 py-3 font-semibold">
+                  {t.cuenta || "-"}
+                </td>
+
+                <td className="px-4 py-3 text-right font-bold text-green-600">
+                  {t.movimiento === "debe"
+                    ? `NIO ${Number(t.monto || 0).toFixed(2)}`
+                    : "-"}
+                </td>
+
+                <td className="px-4 py-3 text-right font-bold text-red-600">
+                  {t.movimiento === "haber"
+                    ? `NIO ${Number(t.monto || 0).toFixed(2)}`
+                    : "-"}
+                </td>
+
+                <td className="px-4 py-3">
+                  {t.descripcion || "-"}
+                </td>
+
+                <td className="px-4 py-3">
+                  {t.usuario_nombre || "-"}
+                </td>
+              </tr>
+            ))}
+
+            {transaccionesContables.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center opacity-60">
+                  No hay transacciones contables registradas todavía.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+)}
           {seccion === "configuracion" && usuarioActivo.rol === "admin" && (
             <section className={`p-4 sm:p-6 rounded-2xl shadow-lg ${tarjeta}`}>
               <h1 className="text-2xl sm:text-3xl font-bold">Configuración</h1>

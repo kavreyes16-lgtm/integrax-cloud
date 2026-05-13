@@ -3109,8 +3109,9 @@ if (svg) {
 
   const png = canvas.toDataURL("image/png");
 
-  doc.text("Código de barras:", 14, 245);
-  doc.addImage(png, "PNG", 14, 250, 100, 25);
+  doc.setFontSize(8);
+doc.text("Código de barras:", 14, 218);
+doc.addImage(png, "PNG", 14, 222, 65, 18);
 }
 
 document.body.removeChild(tempDiv);

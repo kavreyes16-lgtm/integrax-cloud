@@ -4630,15 +4630,22 @@ setTimeout(() => {
 
         const nuevoSaldo = Number(cuenta.saldo || 0) - monto;
 
-        await supabase.from("pagos_cuentas_por_cobrar").insert({
-          empresa_ruc: empresaActiva.ruc,
-          cuenta_id: cuenta.id,
-          numero_factura: cuenta.numero_factura,
-          cliente: cuenta.cliente,
-          monto,
-          metodo_pago: metodoPagoCxc,
-          observacion: observacionPagoCxc,
-        });
+        const { error: errorPagoCxc } = await supabase
+  .from("pagos_cuentas_por_cobrar")
+  .insert({
+    empresa_ruc: empresaActiva.ruc,
+    cuenta_id: cuenta.id,
+    numero_factura: cuenta.numero_factura,
+    cliente: cuenta.cliente,
+    monto,
+    metodo_pago: metodoPagoCxc,
+    observacion: observacionPagoCxc,
+  });
+
+if (errorPagoCxc) {
+  alert("Error guardando historial de abono: " + errorPagoCxc.message);
+  return;
+}
 
         await supabase.from("transacciones_contables").insert([
           {

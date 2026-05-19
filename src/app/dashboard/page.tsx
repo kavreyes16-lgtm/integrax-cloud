@@ -385,7 +385,9 @@ const guardarBodega = async () => {
     await cargarBodegas(ruc);
     await cargarMovimientosInventario(ruc);
     await cargarKardexInventario(ruc);
-    await cargarFacturas(ruc);const { data: cxcData } = await supabase
+    await cargarFacturas(ruc);
+
+const { data: cxcData } = await supabase
   .from("cuentas_por_cobrar")
   .select("*")
   .eq("empresa_ruc", ruc);

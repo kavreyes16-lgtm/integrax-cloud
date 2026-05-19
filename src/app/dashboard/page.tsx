@@ -4582,6 +4582,147 @@ setTimeout(() => {
       </table>
 
     </div>
+    {cuentaCobrandoId && (
+  <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-slate-900">
+    <h3 className="text-lg font-bold text-green-700">Registrar pago</h3>
+
+    <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <input
+        type="number"
+        placeholder="Monto del abono"
+        value={montoPagoCxc}
+        onChange={(e) => setMontoPagoCxc(e.target.value)}
+        className={inputClass}
+      />
+
+      <select
+        value={metodoPagoCxc}
+        onChange={(e) => setMetodoPagoCxc(e.target.value)}
+        className={inputClass}
+      >
+        <option value="Efectivo">Efectivo</option>
+        <option value="Transferencia">Transferencia</option>
+        <option value="POS">POS</option>
+      </select>
+
+      <input
+        type="text"
+        placeholder="Observación"
+        value={observacionPagoCxc}
+        onChange={(e) => setObservacionPagoCxc(e.target.value)}
+        className={inputClass}
+      />
+    </div>
+
+    <button
+      type="button"
+      onClick={async () => {
+        const cuenta = cuentasPorCobrar.find((c: any) => c.id === cuentaCobrandoId);
+
+        if (!cuenta || !empresaActiva) return;
+
+        const monto = Number(montoPagoCxc || 0);
+
+        if (monto <= 0) {
+          alert("Ingresa un monto válido");
+          return;
+        }
+
+        const nuevoSaldo = Number(cuenta.saldo || 0) - monto;
+
+        await supabase.from("pagos_cuentas_por_cobrar").insert({
+          empresa_ruc: empresaActiva.ruc,
+          cuenta_id: cuenta.id,
+          numero_factura: cuenta.numero_factura,
+          cliente: cuenta.cliente,
+          monto,
+          metodo_pago: metodoPagoCxc,
+          observacion: observacionPagoCxc,
+        });
+
+        await supabase.from("transacciones_contables").insert([
+          {
+            empresa_ruc: empresaActiva.ruc,
+            factura_id: cuenta.factura_id,
+            numero_factura: cuenta.numero_factura,
+            tipo_operacion: "pago_cuenta_por_cobrar",
+            cuenta: metodoPagoCxc === "Efectivo" ? "Caja" : "Banco",
+            movimiento: "debe",
+            monto,
+            descripcion: `Pago recibido de ${cuenta.numero_factura}`,
+            usuario_nombre: usuarioActivo?.nombre || "Administrador",
+          },
+          {
+            empresa_ruc: empresaActiva.ruc,
+            factura_id: cuenta.factura_id,
+            numero_factura: cuenta.numero_factura,
+            tipo_operacion: "pago_cuenta_por_cobrar",
+            cuenta: "Cuentas por cobrar",
+            movimiento: "haber",
+            monto,
+            descripcion: `Abono aplicado a ${cuenta.numero_factura}`,
+            usuario_nombre: usuarioActivo?.nombre || "Administrador",
+          },
+        ]);
+
+        if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
+          await supabase.from("movimientos_caja").insert([
+            {
+              empresa_ruc: empresaActiva.ruc,
+              caja_id: cajaAbierta.id,
+              factura_id: cuenta.factura_id,
+              tipo: "ingreso",
+              concepto: `Abono CxC ${cuenta.numero_factura}`,
+              monto,
+              usuario_nombre: usuarioActivo?.nombre || "Administrador",
+            },
+          ]);
+        }
+
+        await supabase
+          .from("cuentas_por_cobrar")
+          .update({
+            saldo: nuevoSaldo,
+            estado: nuevoSaldo <= 0 ? "Pagada" : "Pendiente",
+          })
+          .eq("id", cuenta.id);
+
+        const { data: nuevasCxc } = await supabase
+          .from("cuentas_por_cobrar")
+          .select("*")
+          .eq("empresa_ruc", empresaActiva.ruc);
+
+        setCuentasPorCobrar(nuevasCxc || []);
+
+        const { data: nuevosPagos } = await supabase
+          .from("pagos_cuentas_por_cobrar")
+          .select("*")
+          .eq("empresa_ruc", empresaActiva.ruc)
+          .order("created_at", { ascending: false });
+
+        setPagosCxc(nuevosPagos || []);
+
+        const { data: nuevasTransacciones } = await supabase
+          .from("transacciones_contables")
+          .select("*")
+          .eq("empresa_ruc", empresaActiva.ruc)
+          .order("created_at", { ascending: false });
+
+        setTransaccionesContables(nuevasTransacciones || []);
+
+        setCuentaCobrandoId("");
+        setMontoPagoCxc("");
+        setMetodoPagoCxc("Efectivo");
+        setObservacionPagoCxc("");
+
+        alert("Pago registrado correctamente");
+      }}
+      className="mt-4 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"
+    >
+      Guardar pago
+    </button>
+  </div>
+)}
 
   </div>
   <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-5 text-slate-900">

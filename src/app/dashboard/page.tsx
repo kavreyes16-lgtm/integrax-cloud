@@ -4584,6 +4584,88 @@ setTimeout(() => {
     </div>
 
   </div>
+  <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-5 text-slate-900">
+
+  <h3 className="text-lg font-bold text-green-700">
+    Historial de abonos
+  </h3>
+
+  <div className="mt-4 overflow-x-auto">
+
+    <table className="w-full min-w-[700px] text-left text-sm">
+
+      <thead>
+
+        <tr>
+          <th className="px-4 py-3">Factura</th>
+          <th className="px-4 py-3">Cliente</th>
+          <th className="px-4 py-3">Método</th>
+          <th className="px-4 py-3">Monto</th>
+          <th className="px-4 py-3">Observación</th>
+          <th className="px-4 py-3">Fecha</th>
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        {pagosCxc.map((pago: any) => (
+
+          <tr
+            key={pago.id}
+            className="border-t border-green-200"
+          >
+
+            <td className="px-4 py-3">
+              {pago.numero_factura}
+            </td>
+
+            <td className="px-4 py-3">
+              {pago.cliente}
+            </td>
+
+            <td className="px-4 py-3">
+              {pago.metodo_pago}
+            </td>
+
+            <td className="px-4 py-3 font-bold text-green-700">
+              NIO {Number(pago.monto || 0).toFixed(2)}
+            </td>
+
+            <td className="px-4 py-3">
+              {pago.observacion || "-"}
+            </td>
+
+            <td className="px-4 py-3">
+              {new Date(pago.created_at).toLocaleString("es-NI")}
+            </td>
+
+          </tr>
+
+        ))}
+
+        {pagosCxc.length === 0 && (
+
+          <tr>
+
+            <td
+              colSpan={6}
+              className="px-4 py-6 text-center opacity-60"
+            >
+              No hay abonos registrados todavía.
+            </td>
+
+          </tr>
+
+        )}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
 
 </section>
 )}
@@ -5896,51 +5978,7 @@ setTimeout(() => {
                     {empleadosPlanilla.length === 0 && (
                       <p className="opacity-60">No hay empleados registrados.</p>
                     )}
-                    <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-5 text-slate-900">
-  <h3 className="text-lg font-bold text-green-700">
-    Historial de abonos
-  </h3>
-
-  <div className="mt-4 overflow-x-auto">
-    <table className="w-full min-w-[700px] text-left text-sm">
-      <thead>
-        <tr>
-          <th className="px-4 py-3">Factura</th>
-          <th className="px-4 py-3">Cliente</th>
-          <th className="px-4 py-3">Método</th>
-          <th className="px-4 py-3">Monto</th>
-          <th className="px-4 py-3">Observación</th>
-          <th className="px-4 py-3">Fecha</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {pagosCxc.map((pago: any) => (
-          <tr key={pago.id} className="border-t border-green-200">
-            <td className="px-4 py-3">{pago.numero_factura}</td>
-            <td className="px-4 py-3">{pago.cliente}</td>
-            <td className="px-4 py-3">{pago.metodo_pago}</td>
-            <td className="px-4 py-3 font-bold text-green-700">
-              NIO {Number(pago.monto || 0).toFixed(2)}
-            </td>
-            <td className="px-4 py-3">{pago.observacion || "-"}</td>
-            <td className="px-4 py-3">
-              {new Date(pago.created_at).toLocaleString("es-NI")}
-            </td>
-          </tr>
-        ))}
-
-        {pagosCxc.length === 0 && (
-          <tr>
-            <td colSpan={6} className="px-4 py-6 text-center opacity-60">
-              No hay abonos registrados todavía.
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-</div>
+                    
 
                     {empleadosPlanilla.map((emp) => (
                       <div

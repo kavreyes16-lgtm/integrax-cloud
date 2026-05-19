@@ -4700,7 +4700,7 @@ setTimeout(() => {
           .eq("empresa_ruc", empresaActiva.ruc)
           .order("created_at", { ascending: false });
 
-        setPagosCxc(nuevosPagos || []);
+        setPagosCxc([...(nuevosPagos || [])]);
 
         const { data: nuevasTransacciones } = await supabase
           .from("transacciones_contables")

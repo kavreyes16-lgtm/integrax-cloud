@@ -4526,7 +4526,9 @@ setTimeout(() => {
 
         <tbody>
 
-          {cuentasPorCobrar.map((cxc: any) => (
+          {cuentasPorCobrar
+  .filter((cxc: any) => Number(cxc.saldo || 0) > 0)
+  .map((cxc: any) => (
 
             <tr
               key={cxc.id}
@@ -4751,6 +4753,7 @@ if (errorPagoCxc) {
           <th className="px-4 py-3">Monto</th>
           <th className="px-4 py-3">Observación</th>
           <th className="px-4 py-3">Fecha</th>
+          <th className="px-4 py-3">Comprobante</th>
         </tr>
 
       </thead>
@@ -4787,6 +4790,15 @@ if (errorPagoCxc) {
             <td className="px-4 py-3">
               {new Date(pago.created_at).toLocaleString("es-NI")}
             </td>
+            <td className="px-4 py-3">
+  <button
+    type="button"
+    onClick={() => generarPDFAbonoCXC(pago)}
+    className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+  >
+    PDF
+  </button>
+</td>
 
           </tr>
 

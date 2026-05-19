@@ -272,12 +272,17 @@ const guardarBodega = async () => {
   const cargarFacturas = async (rucEmpresa: string) => {
     
     const { data } = await supabase
-      .from("facturas")
-      .select("*")
-      .eq("empresa_ruc", rucEmpresa)
-      .order("created_at", { ascending: false });
+  .from("facturas")
+  .select("*")
+  .order("created_at", { ascending: false });
 
-    setFacturas(data || []);
+const facturasFiltradas = (data || []).filter((f: any) =>
+  String(f.empresa_ruc || "") === String(rucEmpresa) ||
+  String(f.empresa_nombre || "").toLowerCase() ===
+    String(empresaActiva?.nombre || "").toLowerCase()
+);
+
+setFacturas(facturasFiltradas);
   };
   const cargarCajas = async (rucEmpresa: string) => {
   const { data } = await supabase

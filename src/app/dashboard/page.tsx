@@ -2628,25 +2628,90 @@ const generarPDFAbonoCXC = async (pago: any) => {
 
   const doc = new jsPDF();
 
-  doc.setFontSize(18);
-  doc.text("Comprobante de Abono", 14, 20);
+  const azul: [number, number, number] = [15, 23, 42];
+  const rojo: [number, number, number] = [220, 38, 38];
+  const gris: [number, number, number] = [100, 116, 139];
+
+  doc.setFillColor(azul[0], azul[1], azul[2]);
+  doc.roundedRect(14, 12, 182, 28, 4, 4, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.text(empresaActiva?.nombre || "INTEGRAX Cloud", 20, 24);
+
+  doc.setFontSize(9);
+  doc.text("Sistema empresarial de facturación, inventario y control financiero", 20, 31);
+
+  doc.setTextColor(azul[0], azul[1], azul[2]);
+  doc.setFontSize(20);
+  doc.text("COMPROBANTE DE ABONO", 14, 55);
 
   doc.setFontSize(11);
-  doc.text(`Factura: ${pago.numero_factura || "-"}`, 14, 40);
-  doc.text(`Cliente: ${pago.cliente || "-"}`, 14, 50);
-  doc.text(`Método de pago: ${pago.metodo_pago || "-"}`, 14, 60);
-  doc.text(`Monto abonado: NIO ${Number(pago.monto || 0).toFixed(2)}`, 14, 70);
-  doc.text(`Observación: ${pago.observacion || "-"}`, 14, 80);
-  doc.text(
-    `Fecha: ${new Date(pago.created_at).toLocaleString("es-NI")}`,
-    14,
-    90
-  );
+  doc.setTextColor(gris[0], gris[1], gris[2]);
+  doc.text(`Factura asociada: ${pago.numero_factura || "-"}`, 14, 64);
+  doc.text(`Fecha: ${new Date(pago.created_at).toLocaleString("es-NI")}`, 14, 72);
+
+  doc.setFillColor(254, 242, 242);
+  doc.roundedRect(145, 48, 50, 22, 4, 4, "F");
+
+  doc.setTextColor(rojo[0], rojo[1], rojo[2]);
+  doc.setFontSize(18);
+  doc.text(`NIO ${Number(pago.monto || 0).toFixed(2)}`, 150, 62);
+
+  doc.setTextColor(azul[0], azul[1], azul[2]);
+  doc.setFontSize(13);
+  doc.text("Datos de empresa", 14, 92);
 
   doc.setFontSize(10);
-  doc.text("Comprobante generado por INTEGRAX Cloud.", 14, 115);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`Empresa: ${empresaActiva?.nombre || "No registrado"}`, 14, 101);
+  doc.text(`RUC: ${empresaActiva?.ruc || "No registrado"}`, 14, 109);
+  doc.text(`Teléfono: ${empresaActiva?.telefono || "No registrado"}`, 14, 117);
+  doc.text(`Correo: ${empresaActiva?.correo || "No registrado"}`, 14, 125);
 
-  doc.save(`abono-${pago.numero_factura || "cxc"}.pdf`);
+  doc.setTextColor(azul[0], azul[1], azul[2]);
+  doc.setFontSize(13);
+  doc.text("Datos del cliente", 110, 92);
+
+  doc.setFontSize(10);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`Cliente: ${pago.cliente || "-"}`, 110, 101);
+  doc.text(`Método de pago: ${pago.metodo_pago || "-"}`, 110, 109);
+  doc.text(`Observación: ${pago.observacion || "-"}`, 110, 117);
+
+  doc.setDrawColor(226, 232, 240);
+  doc.line(14, 140, 196, 140);
+
+  doc.setTextColor(azul[0], azul[1], azul[2]);
+  doc.setFontSize(13);
+  doc.text("Detalle del abono", 14, 153);
+
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(14, 162, 182, 36, 4, 4, "F");
+
+  doc.setFontSize(10);
+  doc.setTextColor(gris[0], gris[1], gris[2]);
+  doc.text("Concepto", 22, 174);
+  doc.text("Monto", 150, 174);
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(11);
+  doc.text(`Abono aplicado a factura ${pago.numero_factura || "-"}`, 22, 187);
+  doc.text(`NIO ${Number(pago.monto || 0).toFixed(2)}`, 150, 187);
+
+  doc.setFillColor(219, 234, 254);
+  doc.roundedRect(14, 215, 182, 22, 4, 4, "F");
+
+  doc.setTextColor(15, 23, 42);
+  doc.setFontSize(10);
+  doc.text("Este comprobante confirma la recepción del abono indicado.", 20, 228);
+
+  doc.setTextColor(gris[0], gris[1], gris[2]);
+  doc.setFontSize(9);
+  doc.text("Documento generado automáticamente por INTEGRAX Cloud.", 14, 270);
+  doc.text("Sistema empresarial desarrollado por INTEGRAX Cloud.", 14, 278);
+
+  doc.save(`comprobante-abono-${pago.numero_factura || "cxc"}.pdf`);
 };
   const generarTicketPOS = async (factura: any) => {
   const { data: items } = await supabase

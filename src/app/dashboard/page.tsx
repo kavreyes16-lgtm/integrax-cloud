@@ -4018,21 +4018,6 @@ useEffect(() => {
     Facturas guardadas ›
   </button>
 
-  <button
-    type="button"
-    onClick={() => {
-      const bloque = document.getElementById("cuentas-por-cobrar");
-      bloque?.scrollIntoView({ behavior: "smooth" });
-    }}
-    className={`w-full sm:w-[320px] rounded-2xl border px-6 py-5 text-lg font-bold shadow-sm transition
-    ${
-      modoOscuro
-        ? "border-red-500/30 bg-red-950/30 text-red-300 hover:bg-red-900/40"
-        : "border-red-200 bg-white text-red-600 hover:bg-red-50"
-    }`}
-  >
-    Cuentas por cobrar ›
-  </button>
 
 </div>
 

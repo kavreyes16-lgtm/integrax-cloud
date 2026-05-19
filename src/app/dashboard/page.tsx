@@ -4707,6 +4707,21 @@ setTimeout(() => {
         setMetodoPagoCxc("Efectivo");
         setObservacionPagoCxc("");
 
+        const { data: pagosActualizados } = await supabase
+  .from("pagos_cuentas_por_cobrar")
+  .select("*")
+  .eq("empresa_ruc", empresaActiva.ruc)
+  .order("created_at", { ascending: false });
+
+setPagosCxc(pagosActualizados || []);
+
+const { data: transaccionesActualizadas } = await supabase
+  .from("transacciones_contables")
+  .select("*")
+  .eq("empresa_ruc", empresaActiva.ruc)
+  .order("created_at", { ascending: false });
+
+setTransaccionesContables(transaccionesActualizadas || []);
         alert("Pago registrado correctamente");
       }}
       className="mt-4 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"

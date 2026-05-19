@@ -3123,6 +3123,7 @@ document.body.removeChild(tempDiv);
     ["planilla", "Planilla"],
     ["clientes", "Clientes"],
     ["facturacion", "Facturación"],
+    ["cuentasxcobrar", "Cuentas por cobrar"],
     ["caja", "Caja"],
     ["contabilidad", "Contabilidad"],
     ["libro-diario", "Libro Diario"],
@@ -3135,6 +3136,7 @@ document.body.removeChild(tempDiv);
   const menuEmpleado = [
   ["dashboard", "Dashboard"],
   ["facturacion", "Facturación"],
+  ["cuentasxcobrar", "Cuentas por cobrar"],
   ["caja", "Caja"],
   ["inventario", "Inventario"],
 ];
@@ -4463,330 +4465,117 @@ setTimeout(() => {
             </section>
           )}
 
-          {cuentasPorCobrar.length > 0 && (
-  <section
-  id="cuentas-por-cobrar"
-  className="mt-8"
->
+         
 
-    <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${tarjeta}`}>
-      
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold">
-            Cuentas por cobrar
-          </h2>
-
-          <p className="mt-1 text-sm opacity-70">
-            Facturas pendientes de pago
-          </p>
-        </div>
-
-        <div className="text-right">
-          <p className="text-sm opacity-70">
-            Total pendientes
-          </p>
-
-          <p className="text-2xl font-black text-red-500">
-            NIO{" "}
-            {cuentasPorCobrar
-              .reduce((acc, item) => acc + Number(item.saldo || 0), 0)
-              .toFixed(2)}
-          </p>
-        </div>
-      </div>
-
-      <button
-  type="button"
-  onClick={generarPDFLibroDiario}
-  className="mt-3 rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
->
-  Exportar PDF
-</button>
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[900px] text-left text-sm">
-          
-          <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
-            <tr>
-              <th className="px-4 py-3">Factura</th>
-              <th className="px-4 py-3">Cliente</th>
-              <th className="px-4 py-3">Monto</th>
-              <th className="px-4 py-3">Saldo</th>
-              <th className="px-4 py-3">Estado</th>
-              <th className="px-4 py-3">Fecha</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-            {cuentasPorCobrar.map((cxc: any) => (
-
-              <tr
-                key={cxc.id}
-                className="border-b border-slate-200 dark:border-slate-800"
-              >
-                <td className="px-4 py-3 font-semibold">
-                  {cxc.numero_factura}
-                </td>
-
-                <td className="px-4 py-3">
-                  {cxc.cliente}
-                </td>
-
-                <td className="px-4 py-3">
-                  NIO {Number(cxc.monto_total || 0).toFixed(2)}
-                </td>
-
-                <td className="px-4 py-3 font-bold text-red-500">
-                  NIO {Number(cxc.saldo || 0).toFixed(2)}
-                </td>
-
-                <td className="px-4 py-3">
-                  <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-                    {cxc.estado}
-                  </span>
-                </td>
-
-                <td className="px-4 py-3">
-                  {cxc.fecha}
-                </td>
-                <td className="px-4 py-3">
-  <button
-    type="button"
-    onClick={() => setCuentaCobrandoId(cxc.id)}
-    className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700"
-  >
-    Registrar pago
-  </button>
-</td>
-              </tr>
-
-            ))}
-
-          </tbody>
-
-        </table>
-      </div>
-      {cuentaCobrandoId && (
-  <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-slate-900">
-    <h3 className="text-lg font-bold text-green-700">Registrar pago</h3>
-
-    <div className="mt-4 grid gap-4 sm:grid-cols-3">
-      <input
-        type="number"
-        placeholder="Monto del abono"
-        value={montoPagoCxc}
-        onChange={(e) => setMontoPagoCxc(e.target.value)}
-        className={inputClass}
-      />
-
-      <select
-        value={metodoPagoCxc}
-        onChange={(e) => setMetodoPagoCxc(e.target.value)}
-        className={inputClass}
-      >
-        <option value="Efectivo">Efectivo</option>
-        <option value="Transferencia">Transferencia</option>
-        <option value="POS">POS</option>
-      </select>
-
-      <input
-        type="text"
-        placeholder="Observación"
-        value={observacionPagoCxc}
-        onChange={(e) => setObservacionPagoCxc(e.target.value)}
-        className={inputClass}
-      />
-    </div>
-
-    <button
-  type="button"
-  onClick={async () => {
-
-    const cuenta = cuentasPorCobrar.find(
-      (c: any) => c.id === cuentaCobrandoId
-    );
-
-    if (!cuenta) return;
-
-    const monto = Number(montoPagoCxc || 0);
-
-    if (monto <= 0) {
-      alert("Ingresa un monto válido");
-      return;
-    }
-
-    const nuevoSaldo =
-      Number(cuenta.saldo || 0) - monto;
-
-    await supabase
-      .from("pagos_cuentas_por_cobrar")
-      .insert({
-        empresa_ruc: empresaActiva?.ruc,
-        cuenta_id: cuenta.id,
-        numero_factura: cuenta.numero_factura,
-        cliente: cuenta.cliente,
-        monto,
-        metodo_pago: metodoPagoCxc,
-        observacion: observacionPagoCxc,
-      });
-
-    await supabase.from("transacciones_contables").insert([
-  {
-    empresa_ruc: empresaActiva?.ruc,
-    factura_id: cuenta.factura_id,
-    numero_factura: cuenta.numero_factura,
-    tipo_operacion: "pago_cuenta_por_cobrar",
-    cuenta:
-      metodoPagoCxc === "Efectivo"
-        ? "Caja"
-        : "Banco",
-    movimiento: "debe",
-    monto,
-    descripcion: `Pago recibido de ${cuenta.numero_factura}`,
-    usuario_nombre: usuarioActivo?.nombre || "Administrador",
-  },
-  {
-    empresa_ruc: empresaActiva?.ruc,
-    factura_id: cuenta.factura_id,
-    numero_factura: cuenta.numero_factura,
-    tipo_operacion: "pago_cuenta_por_cobrar",
-    cuenta: "Cuentas por cobrar",
-    movimiento: "haber",
-    monto,
-    descripcion: `Abono aplicado a ${cuenta.numero_factura}`,
-    usuario_nombre: usuarioActivo?.nombre || "Administrador",
-  },
-]);
-
-if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
-  await supabase.from("movimientos_caja").insert([
-    {
-      empresa_ruc: empresaActiva?.ruc,
-      caja_id: cajaAbierta.id,
-      factura_id: cuenta.factura_id,
-      tipo: "ingreso",
-      concepto: `Abono CxC ${cuenta.numero_factura}`,
-      monto,
-      usuario_nombre: usuarioActivo?.nombre || "Administrador",
-    },
-  ]);
-}
-      await supabase
-      .from("cuentas_por_cobrar")
-      .update({
-        saldo: nuevoSaldo,
-        estado:
-          nuevoSaldo <= 0
-            ? "Pagada"
-            : "Pendiente",
-      })
-      .eq("id", cuenta.id);
-
-    await cargarFacturas(empresaActiva.ruc);
-
-    const { data: nuevasCxc } = await supabase
-      .from("cuentas_por_cobrar")
-      .select("*")
-      .eq("empresa_ruc", empresaActiva.ruc);
-
-    setCuentasPorCobrar(nuevasCxc || []);
-
-    setCuentaCobrandoId("");
-    setMontoPagoCxc("");
-    setMetodoPagoCxc("Efectivo");
-    setObservacionPagoCxc("");
-
-    alert("Pago registrado correctamente");
-
-  }}
-  className="mt-4 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700"
->
-  Guardar pago
-</button>
-  </div>
-)}
-
-    </div>
-
-  </section>
-)}
-          <section className="mt-8">
+        {seccion === "cuentasxcobrar" && (
+<section className="space-y-6">
 
   <div className={`rounded-2xl border p-4 sm:p-6 shadow-sm ${tarjeta}`}>
 
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-4">
+
       <div>
         <h2 className="text-xl sm:text-2xl font-bold">
-          Historial de pagos
+          Cuentas por cobrar
         </h2>
 
         <p className="mt-1 text-sm opacity-70">
-          Abonos registrados en cuentas por cobrar
+          Facturas pendientes de pago
         </p>
       </div>
+
+      <div className="text-right">
+        <p className="text-sm opacity-70">
+          Total pendientes
+        </p>
+
+        <p className="text-3xl font-extrabold text-red-500">
+          NIO {cuentasPorCobrar.reduce((acc: number, cxc: any) => acc + Number(cxc.saldo || 0), 0).toFixed(2)}
+        </p>
+      </div>
+
     </div>
+
+    <button
+      type="button"
+      onClick={generarPDFCuentasPorCobrar}
+      className="mt-6 rounded-xl bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700"
+    >
+      Exportar PDF
+    </button>
 
     <div className="mt-6 overflow-x-auto">
 
       <table className="w-full min-w-[900px] text-left text-sm">
 
         <thead className={modoOscuro ? "bg-slate-800" : "bg-slate-50"}>
+
           <tr>
+
             <th className="px-4 py-3">Factura</th>
             <th className="px-4 py-3">Cliente</th>
             <th className="px-4 py-3">Monto</th>
-            <th className="px-4 py-3">Método</th>
-            <th className="px-4 py-3">Observación</th>
+            <th className="px-4 py-3">Saldo</th>
+            <th className="px-4 py-3">Estado</th>
             <th className="px-4 py-3">Fecha</th>
+            <th className="px-4 py-3">Acciones</th>
+
           </tr>
+
         </thead>
 
         <tbody>
 
-          {pagosCxc.map((pago: any) => (
+          {cuentasPorCobrar.map((cxc: any) => (
 
             <tr
-              key={pago.id}
-              className="border-b border-slate-200 dark:border-slate-800"
+              key={cxc.id}
+              className="border-b border-slate-200/20"
             >
+
               <td className="px-4 py-3 font-semibold">
-                {pago.numero_factura}
+                {cxc.numero_factura}
               </td>
 
               <td className="px-4 py-3">
-                {pago.cliente}
-              </td>
-
-              <td className="px-4 py-3 font-bold text-green-600">
-                NIO {Number(pago.monto || 0).toFixed(2)}
+                {cxc.cliente}
               </td>
 
               <td className="px-4 py-3">
-                {pago.metodo_pago}
+                NIO {Number(cxc.monto_total || 0).toFixed(2)}
+              </td>
+
+              <td className="px-4 py-3 font-bold text-red-500">
+                NIO {Number(cxc.saldo || 0).toFixed(2)}
               </td>
 
               <td className="px-4 py-3">
-                {pago.observacion || "-"}
+
+                <span className="rounded-full bg-red-100 px-4 py-1 text-sm font-bold text-red-700">
+                  {cxc.estado}
+                </span>
+
               </td>
 
               <td className="px-4 py-3">
-                {new Date(pago.created_at).toLocaleString()}
+                {new Date(cxc.created_at).toLocaleDateString("es-NI")}
               </td>
+
+              <td className="px-4 py-3">
+
+                <button
+                  type="button"
+                  onClick={() => setCuentaCobrandoId(cxc.id)}
+                  className="rounded-xl bg-green-600 px-4 py-2 font-semibold text-white hover:bg-green-700"
+                >
+                  Registrar pago
+                </button>
+
+              </td>
+
             </tr>
 
           ))}
-
-          {pagosCxc.length === 0 && (
-            <tr>
-              <td
-                colSpan={6}
-                className="px-4 py-6 text-center opacity-60"
-              >
-                No hay pagos registrados todavía.
-              </td>
-            </tr>
-          )}
 
         </tbody>
 
@@ -4797,6 +4586,7 @@ if (metodoPagoCxc === "Efectivo" && cajaAbierta) {
   </div>
 
 </section>
+)}
           {seccion === "caja" && (
   <section className="space-y-6">
     <div className="rounded-3xl bg-white p-6 shadow-xl text-slate-900 dark:bg-slate-900 dark:text-white">

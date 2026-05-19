@@ -2622,6 +2622,32 @@ const generarPDFCuentasPorCobrar = async () => {
 
   doc.save("cuentas-por-cobrar.pdf");
 };
+const generarPDFAbonoCXC = async (pago: any) => {
+  const jsPDFModule = await import("jspdf");
+  const jsPDF = jsPDFModule.default;
+
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text("Comprobante de Abono", 14, 20);
+
+  doc.setFontSize(11);
+  doc.text(`Factura: ${pago.numero_factura || "-"}`, 14, 40);
+  doc.text(`Cliente: ${pago.cliente || "-"}`, 14, 50);
+  doc.text(`Método de pago: ${pago.metodo_pago || "-"}`, 14, 60);
+  doc.text(`Monto abonado: NIO ${Number(pago.monto || 0).toFixed(2)}`, 14, 70);
+  doc.text(`Observación: ${pago.observacion || "-"}`, 14, 80);
+  doc.text(
+    `Fecha: ${new Date(pago.created_at).toLocaleString("es-NI")}`,
+    14,
+    90
+  );
+
+  doc.setFontSize(10);
+  doc.text("Comprobante generado por INTEGRAX Cloud.", 14, 115);
+
+  doc.save(`abono-${pago.numero_factura || "cxc"}.pdf`);
+};
   const generarTicketPOS = async (factura: any) => {
   const { data: items } = await supabase
     .from("factura_items")

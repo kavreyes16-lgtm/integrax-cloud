@@ -1145,6 +1145,7 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
         : Number(cajaAbierta.ventas_transferencia || 0),
   })
   .eq("id", cajaAbierta.id);
+  
 
 await cargarCajas(empresaActiva.ruc);
 }
@@ -1211,6 +1212,16 @@ await cargarCajas(empresaActiva.ruc);
 
     await cargarProductos(empresaActiva.ruc);
 
+    await cargarCajas(empresaActiva.ruc);
+
+const { data: cajaActualizada } = await supabase
+  .from("cajas")
+  .select("*")
+  .eq("empresa_ruc", empresaActiva.ruc)
+  .eq("estado", "abierta")
+  .maybeSingle();
+
+setCajaAbierta(cajaActualizada || null);
     alert("Factura guardada correctamente");
   };
 

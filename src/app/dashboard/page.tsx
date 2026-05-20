@@ -1090,18 +1090,28 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
         .eq("id", item.id);
     }
 
-    if (cajaAbierta) {
-  await supabase.from("movimientos_caja").insert([
-    {
-      empresa_ruc: empresaActiva.ruc,
-      caja_id: cajaAbierta.id,
-      factura_id: facturaNueva.id,
-      tipo: "ingreso",
-      concepto: `Venta ${facturaNueva.numero_factura}`,
-      monto: Number(facturaNueva.total || 0),
-      usuario_nombre: usuarioActivo?.nombre || "Administrador",
-    },
-  ]);
+    if (
+  cajaAbierta &&
+  tipoPago !== "Crédito"
+) {
+  const { error: errorMovimientoCaja } = await supabase
+    .from("movimientos_caja")
+    .insert([
+      {
+        empresa_ruc: empresaActiva.ruc,
+        caja_id: cajaAbierta.id,
+        factura_id: facturaNueva.id,
+        tipo: "ingreso",
+        concepto: `Venta ${facturaNueva.numero_factura}`,
+        monto: Number(facturaNueva.total || 0),
+        usuario_nombre: usuarioActivo?.nombre || "Administrador",
+      },
+    ]);
+
+  if (errorMovimientoCaja) {
+    alert("Error guardando movimiento en caja: " + errorMovimientoCaja.message);
+    return;
+  }
 }
     if (tipoPago === "Credito") {
   await supabase.from("cuentas_por_cobrar").insert([
@@ -1116,7 +1126,9 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
       estado: "pendiente",
     },
   ]);
+  
 }
+
     await supabase.from("transacciones_contables").insert([
   {
     empresa_ruc: empresaActiva.ruc,

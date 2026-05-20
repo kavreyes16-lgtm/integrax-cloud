@@ -1126,7 +1126,27 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
       estado: "pendiente",
     },
   ]);
-  
+  await supabase
+  .from("cajas")
+  .update({
+    ventas_efectivo:
+      String(tipoPago) === "Efectivo"
+        ? Number(cajaAbierta.ventas_efectivo || 0) + Number(facturaNueva.total || 0)
+        : Number(cajaAbierta.ventas_efectivo || 0),
+
+    ventas_tarjeta:
+      String(tipoPago) === "POS"
+        ? Number(cajaAbierta.ventas_tarjeta || 0) + Number(facturaNueva.total || 0)
+        : Number(cajaAbierta.ventas_tarjeta || 0),
+
+    ventas_transferencia:
+      String(tipoPago) === "Transferencia"
+        ? Number(cajaAbierta.ventas_transferencia || 0) + Number(facturaNueva.total || 0)
+        : Number(cajaAbierta.ventas_transferencia || 0),
+  })
+  .eq("id", cajaAbierta.id);
+
+await cargarCajas(empresaActiva.ruc);
 }
 
     await supabase.from("transacciones_contables").insert([
@@ -4784,6 +4804,7 @@ if (errorPagoCxc) {
               usuario_nombre: usuarioActivo?.nombre || "Administrador",
             },
           ]);
+          
         }
 
         await supabase

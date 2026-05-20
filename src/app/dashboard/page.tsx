@@ -5078,6 +5078,28 @@ if (errorPagoCxc) {
             </h3>
           </div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+  <div className="rounded-2xl bg-green-600/20 p-4">
+    <p className="text-sm text-slate-300">Ventas efectivo</p>
+    <h3 className="mt-2 text-2xl font-bold text-green-400">
+      NIO {Number(cajaAbierta?.ventas_efectivo || 0).toFixed(2)}
+    </h3>
+  </div>
+
+  <div className="rounded-2xl bg-blue-600/20 p-4">
+    <p className="text-sm text-slate-300">Ventas POS</p>
+    <h3 className="mt-2 text-2xl font-bold text-blue-400">
+      NIO {Number(cajaAbierta?.ventas_tarjeta || 0).toFixed(2)}
+    </h3>
+  </div>
+
+  <div className="rounded-2xl bg-purple-600/20 p-4">
+    <p className="text-sm text-slate-300">Transferencias</p>
+    <h3 className="mt-2 text-2xl font-bold text-purple-400">
+      NIO {Number(cajaAbierta?.ventas_transferencia || 0).toFixed(2)}
+    </h3>
+  </div>
+</div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>

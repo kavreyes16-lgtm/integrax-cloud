@@ -1126,7 +1126,7 @@ if (tipoPago === "Mixto" && totalPagadoMixto !== Number(totalConIVA.toFixed(2)))
       estado: "pendiente",
     },
   ]);
-  await supabase
+  const { error: errorActualizarCaja } = await supabase
   .from("cajas")
   .update({
     ventas_efectivo:

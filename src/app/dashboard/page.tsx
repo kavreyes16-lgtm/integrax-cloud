@@ -3552,21 +3552,7 @@ useEffect(() => {
                     contabilidad y planilla de técnicos para una presentación más enfocada.
                   </p>
                 </div>
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-  <input
-    type="date"
-    value={fechaInicioLibro}
-    onChange={(e) => setFechaInicioLibro(e.target.value)}
-    className={inputClass}
-  />
-
-  <input
-    type="date"
-    value={fechaFinLibro}
-    onChange={(e) => setFechaFinLibro(e.target.value)}
-    className={inputClass}
-  />
-</div>
+                
 
                 <div className="mt-4 flex flex-col sm:flex-row flex-wrap gap-3">
                   <button
